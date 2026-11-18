@@ -9,3 +9,7 @@ models/
 models--*/
 TASK.md
 TASK2_SITE.md
+
+# Local Netlify folder
+.netlify
+TASK3_MIC.md
