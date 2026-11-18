@@ -1,0 +1,51 @@
+#!/bin/sh
+set -eu
+umask 077
+
+app=$1
+label='murdic Local Code Signing'
+keychain="$HOME/Library/Keychains/login.keychain-db"
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+if ! /usr/bin/security find-certificate -c "$label" -p "$keychain" > "$work/cert.pem" 2>/dev/null; then
+    if [ -e "${2:?installed app path required}" ] &&
+       /usr/bin/codesign -d -r- "$2" 2>&1 | /usr/bin/grep -Eq 'certificate|anchor'; then
+        echo '기존 앱의 서명 인증서를 키체인에서 복구하세요. 서명자를 변경하지 않았습니다.' >&2
+        exit 1
+    fi
+    cat > "$work/cert.cnf" <<'CONF'
+[req]
+prompt = no
+distinguished_name = name
+x509_extensions = extensions
+[name]
+CN = murdic Local Code Signing
+[extensions]
+basicConstraints = critical, CA:FALSE
+keyUsage = critical, digitalSignature
+extendedKeyUsage = critical, codeSigning
+CONF
+    /usr/bin/openssl req -x509 -newkey rsa:3072 -nodes -sha256 -days 7300 \
+        -config "$work/cert.cnf" -keyout "$work/key.pem" -out "$work/cert.pem" 2>"$work/generate.log"
+    /usr/bin/openssl rand -hex 24 > "$work/pass"
+    /usr/bin/openssl pkcs12 -export -inkey "$work/key.pem" -in "$work/cert.pem" \
+        -name "$label" -out "$work/identity.p12" -keypbe PBE-SHA1-3DES -certpbe PBE-SHA1-3DES -macalg sha1 -passout "file:$work/pass"
+    /usr/bin/security import "$work/identity.p12" -k "$keychain" -f pkcs12 -P "$(cat "$work/pass")" \
+        -x -T /usr/bin/codesign
+fi
+fingerprint=$(/usr/bin/openssl x509 -in "$work/cert.pem" -noout -fingerprint -sha1 | tr -d ':' | cut -d= -f2)
+requirement="identifier \"local.murmur.dictate\" and certificate leaf = H\"$fingerprint\""
+/usr/bin/codesign --force --sign "$fingerprint" --keychain "$keychain" \
+    --timestamp=none -r="designated => $requirement" "$app"
+/usr/bin/codesign --verify --strict -R="$requirement" "$app"
+
+# An update must continue to satisfy the installed build's signer requirement.
+# The one-time migration from the original ad-hoc build has no certificate.
+if [ -d "$2" ]; then
+    old_rule=$(/usr/bin/codesign -d -r- "$2" 2>&1 | sed -En 's/^#? ?designated => //p')
+    case "$old_rule" in
+        cdhash\ *) ;;
+        "") echo '기존 설치본의 서명 정보를 확인할 수 없습니다.' >&2; exit 1 ;;
+        *) /usr/bin/codesign --verify --strict -R="$old_rule" "$app" ;;
+    esac
+fi

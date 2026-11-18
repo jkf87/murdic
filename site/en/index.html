@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>murdic · Korean dictation on your Mac</title>
+    <meta
+      name="description"
+      content="Hold right Option and speak Korean. Release to paste a sentence at your cursor, with fillers trimmed and spoken corrections applied. After the model download, it works offline without a subscription."
+    />
+    <link rel="icon" type="image/png" href="../assets/icon.png" />
+    <link rel="alternate" hreflang="ko" href="https://murdic.netlify.app/" />
+    <link rel="alternate" hreflang="en" href="https://murdic.netlify.app/en/" />
+    <link rel="stylesheet" href="../style.css" />
+    <script src="../app.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <nav class="wrap nav" aria-label="Main menu">
+        <a class="brand" href="#top"
+          ><img src="../assets/icon.png" alt="" />murdic</a
+        >
+        <div class="navlinks">
+          <a class="navsection" href="#demo">Demo</a
+          ><a class="navsection" href="#install">Install</a
+          ><a href="https://github.com/jkf87/murdic">GitHub ↗</a>
+          <div class="switch" aria-label="Language">
+            <a href="../" lang="ko" hreflang="ko">KO</a
+            ><a href="./" lang="en" hreflang="en" aria-current="page">EN</a>
+          </div>
+        </div>
+      </nav>
+    </header>
+    <main class="wrap" id="top">
+      <section class="hero">
+        <div>
+          <span class="tag">Apple Silicon · macOS</span>
+          <p class="lead">A local alternative to Typeless.</p>
+          <h1>Korean dictation.<br />On your Mac.<br /><em>murdic.</em></h1>
+          <p class="intro">
+            Hold right Option and speak Korean. Release to paste a sentence at
+            your cursor, with fillers trimmed and spoken corrections applied.
+            After the model download, it works offline without a subscription.
+          </p>
+          <div class="actions">
+            <a class="primary" href="#install">Install for free ↓</a
+            ><a class="quiet" href="#demo">▷ Watch the 33s demo</a>
+          </div>
+        </div>
+        <div
+          class="visual"
+          role="img"
+          aria-label="The right Option key and the murdic app icon"
+        >
+          <span class="cap">RIGHT OPTION</span>
+          <div class="wave">
+            <i style="height: 21%"></i><i style="height: 35%"></i
+            ><i style="height: 62%"></i><i style="height: 70%"></i
+            ><i style="height: 49%"></i><i style="height: 31%"></i
+            ><i style="height: 50%"></i><i style="height: 87%"></i
+            ><i style="height: 94%"></i><i style="height: 61%"></i
+            ><i style="height: 34%"></i><i style="height: 50%"></i
+            ><i style="height: 83%"></i><i style="height: 87%"></i
+            ><i style="height: 55%"></i><i style="height: 29%"></i
+            ><i style="height: 36%"></i><i style="height: 55%"></i
+            ><i style="height: 54%"></i><i style="height: 39%"></i
+            ><i style="height: 26%"></i><i style="height: 35%"></i
+            ><i style="height: 66%"></i><i style="height: 83%"></i
+            ><i style="height: 63%"></i><i style="height: 35%"></i
+            ><i style="height: 43%"></i><i style="height: 81%"></i
+            ><i style="height: 98%"></i><i style="height: 71%"></i
+            ><i style="height: 36%"></i><i style="height: 39%"></i
+            ><i style="height: 70%"></i><i style="height: 80%"></i
+            ><i style="height: 56%"></i><i style="height: 29%"></i
+            ><i style="height: 27%"></i><i style="height: 41%"></i
+            ><i style="height: 59%"></i><i style="height: 53%"></i
+            ><i style="height: 32%"></i><i style="height: 33%"></i
+            ><i style="height: 65%"></i><i style="height: 91%"></i
+            ><i style="height: 77%"></i><i style="height: 42%"></i
+            ><i style="height: 37%"></i><i style="height: 71%"></i
+            ><i style="height: 96%"></i><i style="height: 77%"></i
+            ><i style="height: 40%"></i><i style="height: 32%"></i
+            ><i style="height: 54%"></i><i style="height: 69%"></i
+            ><i style="height: 54%"></i><i style="height: 29%"></i
+            ><i style="height: 23%"></i><i style="height: 44%"></i
+            ><i style="height: 70%"></i><i style="height: 68%"></i
+            ><i style="height: 42%"></i><i style="height: 32%"></i
+            ><i style="height: 60%"></i><i style="height: 94%"></i
+            ><i style="height: 88%"></i><i style="height: 51%"></i
+            ><i style="height: 34%"></i><i style="height: 58%"></i
+            ><i style="height: 87%"></i><i style="height: 79%"></i
+            ><i style="height: 44%"></i><i style="height: 27%"></i
+            ><i style="height: 40%"></i><i style="height: 55%"></i
+            ><i style="height: 48%"></i><i style="height: 36%"></i
+            ><i style="height: 26%"></i><i style="height: 43%"></i
+            ><i style="height: 76%"></i><i style="height: 83%"></i
+            ><i style="height: 55%"></i><i style="height: 33%"></i
+            ><i style="height: 52%"></i>
+          </div>
+          <div class="key"><strong>⌥</strong><small>option</small></div>
+          <img class="tileicon" src="../assets/icon.png" alt="" />
+          <div class="visual-foot"><b>murdic</b><span>PUSH TO TALK</span></div>
+        </div>
+      </section>
+      <section id="demo" class="section demogrid">
+        <div>
+          <h2>Watch it write</h2>
+          <p class="desc">
+            Watch a real dictation session, from holding the key to seeing the
+            text appear.
+          </p>
+        </div>
+        <figure>
+          <div class="player">
+            <video
+              src="../assets/demo.mp4"
+              autoplay
+              muted
+              loop
+              playsinline
+              controls
+              preload="metadata"
+              poster="../assets/demo-poster.jpg"
+              aria-label="Korean dictation with murdic"
+            ></video>
+          </div>
+          <figcaption class="mediafoot">
+            <span class="minor">00:33 · Korean audio</span
+            ><button class="pill" id="sound" type="button" aria-pressed="false">
+              Turn sound on</button
+            ><a class="minor" href="../assets/demo.mp4">Open video ↗</a>
+          </figcaption>
+        </figure>
+      </section>
+      <section id="how" class="section">
+        <h2>How it works</h2>
+        <ol class="steps">
+          <li>
+            <h3>Place your cursor</h3>
+            <p>
+              Choose a text field in Notes, Mail, or another app that accepts
+              paste.
+            </p>
+          </li>
+          <li>
+            <h3>Hold the key and speak</h3>
+            <p>
+              Hold right Option. A floating microphone meter shows that
+              recording has started.
+            </p>
+          </li>
+          <li>
+            <h3>Release to write</h3>
+            <p>
+              The locally edited sentence lands at your cursor. Your previous
+              clipboard contents are restored.
+            </p>
+          </li>
+        </ol>
+      </section>
+      <section id="examples" class="section">
+        <div class="sectionhead">
+          <h2>What you say. What gets pasted.</h2>
+          <span class="minor">From the Korean cleanup tests</span>
+        </div>
+        <div class="examples">
+          <article class="ex" lang="ko">
+            <div>
+              <small lang="en">Spoken</small>
+              <p><del>어 </del>오늘 출발해요</p>
+            </div>
+            <div>
+              <small lang="en">Pasted</small>
+              <p>오늘 출발해요.</p>
+            </div>
+          </article>
+          <article class="ex" lang="ko">
+            <div>
+              <small lang="en">Spoken</small>
+              <p>회의 자료 <del>회의 자료 </del>준비해요</p>
+            </div>
+            <div>
+              <small lang="en">Pasted</small>
+              <p>회의 자료 준비해요.</p>
+            </div>
+          </article>
+          <article class="ex" lang="ko">
+            <div>
+              <small lang="en">Spoken</small>
+              <p>내일 <del>세 시, 아니 </del>네 시에 만나요</p>
+            </div>
+            <div>
+              <small lang="en">Pasted</small>
+              <p>내일 네 시에 만나요.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+      <section class="section">
+        <div class="sectionhead"><h2>Why murdic?</h2></div>
+        <div class="why">
+          <article>
+            <h3>No subscription</h3>
+            <p>
+              Install without an account. There is no word allowance or monthly
+              fee.
+            </p>
+          </article>
+          <article>
+            <h3>Works offline</h3>
+            <p>
+              Once the Whisper model is cached, transcription and rule-based
+              editing run offline.
+            </p>
+          </article>
+          <article>
+            <h3>Private by default</h3>
+            <p>
+              Default settings keep audio and text on your Mac. Temporary
+              recordings are removed after processing.
+            </p>
+          </article>
+          <article>
+            <h3>Editable source</h3>
+            <p>
+              The murdic app and cleanup rules are available under MIT. The
+              separately installed Murmur core has its own terms.
+            </p>
+          </article>
+        </div>
+      </section>
+      <section id="install" class="section">
+        <div class="install">
+          <h2>Install on your Mac</h2>
+          <p class="desc">
+            Tested on Apple Silicon with macOS 26.5. Set up the developer tools
+            with <code>xcode-select --install</code> and
+            <code>brew install python</code>. These commands install murdic and
+            the Murmur core.
+          </p>
+          <div class="codebox">
+            <div class="codetop">
+              <span>Terminal</span
+              ><button class="copy" type="button">Copy commands</button>
+            </div>
+            <pre><code>git clone https://github.com/jkf87/murdic.git &amp;&amp; cd murdic
+/opt/homebrew/bin/python3 -m venv .venv &amp;&amp; .venv/bin/pip install &#x27;git+https://github.com/jkf87/murmur.git@master#subdirectory=core&#x27;
+make run</code></pre>
+          </div>
+          <p class="desc">
+            The first run downloads the model. Once it is cached, default
+            dictation works offline.
+          </p>
+        </div>
+      </section>
+      <section class="section">
+        <div class="sectionhead"><h2>How fast is it?</h2></div>
+        <div class="stats">
+          <div>
+            <div class="statnum">293<small> ms</small></div>
+            <p>Median time to text insertion</p>
+          </div>
+          <div>
+            <table>
+              <tbody>
+                <tr>
+                  <th>Model warm-up</th>
+                  <td>2,101 ms</td>
+                </tr>
+                <tr>
+                  <th>Five warm runs</th>
+                  <td>240 / 242 / 293 / 410 / 363 ms</td>
+                </tr>
+                <tr>
+                  <th>Maximum</th>
+                  <td>410 ms</td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="desc">
+              M5 · 32 GB · macOS 26.5. Measured from a five-second Korean WAV
+              request to insertion in an AppKit text view. Physical key release
+              and paste handling in another app add time.
+            </p>
+          </div>
+        </div>
+      </section>
+      <section class="section">
+        <h2>FAQ</h2>
+        <details>
+          <summary>Which permissions does it need?</summary>
+          <p>
+            Allow Microphone to record and Accessibility to paste. Enable Input
+            Monitoring if macOS requires it for the shortcut. To add a missing
+            entry, click +, press ⌘⇧G, and enter ~/Applications/murdic.app.
+          </p>
+        </details>
+        <details>
+          <summary>Which Macs can run it?</summary>
+          <p>
+            It is built for Apple Silicon. We tested an M5 on macOS 26.5 with
+            Homebrew Python 3.14.6. Intel Macs and other macOS versions have not
+            been verified.
+          </p>
+        </details>
+        <details>
+          <summary>Can I dictate in English?</summary>
+          <p>
+            murdic is Korean-first. English terms can appear in Korean
+            sentences, but the model is set to Korean. A Samantha test with an
+            English-only sentence produced Korean text with a different meaning.
+            There is no dedicated English mode.
+          </p>
+        </details>
+        <details>
+          <summary>What happens if I enable an LLM hook?</summary>
+          <p>
+            The hook is off by default. If you configure an external service,
+            the locally cleaned transcript is sent to that service.
+          </p>
+        </details>
+      </section>
+    </main>
+    <footer>
+      <div class="wrap">
+        <span class="brand"><img src="../assets/icon.png" alt="" />murdic</span>
+        <p>murdic is an independent project, unaffiliated with Typeless.</p>
+        <a href="https://github.com/jkf87/murdic">View on GitHub ↗</a>
+      </div>
+    </footer>
+  </body>
+</html>
