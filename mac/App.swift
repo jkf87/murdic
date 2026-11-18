@@ -26,14 +26,18 @@ final class App: NSObject, NSApplicationDelegate {
     private var monitors: [Any] = []
     private var held = false
     private var key = Hotkey(rawValue: UserDefaults.standard.string(forKey: "hotkey") ?? "") ?? .option
-    private var recorder: AVAudioRecorder?
-    private var meter: Timer?
+    private let selection = MicrophoneSelection()
+    private let inputMenu = NSMenu()
+    private let inputItem = NSMenuItem()
+    private var deviceObserver: InputDeviceObserver?
+    private var recorder: MicrophoneCapture?
+    private var testStop: DispatchWorkItem?
     private var target: NSRunningApplication?
     private var transaction: PasteTransaction?
     private let config = FileManager.default.homeDirectoryForCurrentUser
         .appendingPathComponent("Library/Application Support/murdic")
     private let temp = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-    private var wav: URL { temp.appendingPathComponent("recording.wav") }
+
 
     func applicationDidFinishLaunching(_ note: Notification) {
         DistributedNotificationCenter.default().addObserver(forName: Self.reopen, object: nil, queue: .main) { [weak self] _ in
@@ -48,6 +52,15 @@ final class App: NSObject, NSApplicationDelegate {
         }
         item.menu = menu
         menu.addItem(status)
+        inputItem.submenu = inputMenu
+        menu.addItem(inputItem)
+        settings.selectInput = { [weak self] in self?.selectMicrophone($0) }
+        settings.testInput = { [weak self] in self?.testMicrophone() }
+        settings.closed = { [weak self] in
+            if self?.recorder?.isTest == true { self?.cancelRecording() }
+        }
+        deviceObserver = InputDeviceObserver { [weak self] in self?.devicesChanged() }
+        devicesChanged()
         let keys = NSMenu()
         for option in Hotkey.allCases {
             let entry = NSMenuItem(title: option.rawValue, action: #selector(selectKey(_:)), keyEquivalent: "")
@@ -147,10 +160,11 @@ final class App: NSObject, NSApplicationDelegate {
             Logger(subsystem: "local.murmur.dictate", category: "permissions")
                 .notice("Microphone: \(mic, privacy: .public), accessibility: \(trusted, privacy: .public), input: \(canListen, privacy: .public)")
             held = false
-            if state == .recording { cancelRecording() }
+            if recorder != nil { cancelRecording() }
             if trusted || canListen { installMonitors() }
             if state == .ready { ready() }
         }
+        settings.testEnabled(mic && selection.active != nil && recorder == nil && state != .processing && state != .pasting)
         settings.refresh(status.title, micAllowed: mic, trusted: trusted, canListen: canListen)
     }
 
@@ -194,52 +208,132 @@ final class App: NSObject, NSApplicationDelegate {
         overlay.hide()
     }
 
+    private func devicesChanged() {
+        guard let snapshot = InputDevices.enumerate() else { return }
+        let previous = selection.active
+        let lost = selection.update(snapshot)
+        updateInputs()
+        let routeChanged = recorder.map { $0.microphone != selection.active } ?? false
+        if routeChanged { cancelRecording() }
+        if let lost {
+            notify("\(lost) 연결 끊김 → " + (selection.active == nil ? "사용할 마이크 없음" : "기본 마이크 사용"))
+        } else if routeChanged {
+            notify("마이크 변경: \(previous?.name ?? "없음") → \(selection.active?.name ?? "없음")")
+        }
+    }
+
+    private func updateInputs() {
+        inputItem.title = "마이크: " + (selection.active?.name ?? "없음")
+        inputMenu.removeAllItems()
+        for (title, uid) in [(selection.defaultTitle, nil as String?)] + selection.inputs.devices.map({ ($0.name, $0.uid) }) {
+            let item = inputMenu.addItem(withTitle: title, action: #selector(pickedInput(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = uid
+            item.state = uid == selection.pinnedUID ? .on : .off
+        }
+        settings.updateInputs(selection)
+    }
+
+    @objc private func pickedInput(_ sender: NSMenuItem) { selectMicrophone(sender.representedObject as? String) }
+
+    private func selectMicrophone(_ uid: String?) {
+        let mic = selection.inputs.devices.first { $0.uid == uid }
+        guard uid == mic?.uid else { devicesChanged(); return }
+        if recorder != nil { cancelRecording() }
+        selection.select(mic)
+        updateInputs()
+    }
+
+    private func notify(_ message: String) {
+        status.title = message
+        overlay.notice(message)
+        refreshPermissions()
+    }
+
+    private func testMicrophone() {
+        guard recorder == nil, state != .processing, state != .pasting,
+              AVCaptureDevice.authorizationStatus(for: .audio) == .authorized else { return }
+        startCapture(test: true)
+    }
+
     private func begin() {
         guard AXIsProcessTrusted(), AVCaptureDevice.authorizationStatus(for: .audio) == .authorized else {
             ready(); showSettings(); return
         }
-        guard let active = NSWorkspace.shared.frontmostApplication,
+        guard recorder == nil, let active = NSWorkspace.shared.frontmostApplication,
               active.processIdentifier != ProcessInfo.processInfo.processIdentifier else { return }
-        do {
-            let session = try AVAudioRecorder(url: wav, settings: [
-                AVFormatIDKey: kAudioFormatLinearPCM, AVSampleRateKey: 16000,
-                AVNumberOfChannelsKey: 1, AVLinearPCMBitDepthKey: 16,
-                AVLinearPCMIsFloatKey: false, AVLinearPCMIsBigEndianKey: false
-            ])
-            session.isMeteringEnabled = true
-            guard session.record() else { throw DictationError.message("마이크를 열 수 없습니다.") }
-            recorder = session
-            target = active
-            state = .recording
-            overlay.show("녹음 중 · 키를 떼면 입력", meter: true)
-            status.title = "녹음 중"
-            let timer = Timer(timeInterval: 0.08, repeats: true) { [weak self] _ in
-                session.updateMeters()
-                self?.overlay.update(db: session.averagePower(forChannel: 0))
-            }
-            RunLoop.main.add(timer, forMode: .common)
-            meter = timer
-        } catch { report(error.localizedDescription) }
+        target = active
+        startCapture(test: false)
     }
 
-    private func stopAudio() {
-        meter?.invalidate()
-        meter = nil
-        recorder?.stop()
+    private func startCapture(test: Bool) {
+        guard let mic = selection.active else { notify("연결된 입력 마이크가 없습니다."); return }
+        let capture = MicrophoneCapture(mic, url: test ? nil : temp.appendingPathComponent(UUID().uuidString + ".wav"))
+        recorder = capture
+        settings.updateLevel(-160)
+        settings.testEnabled(false)
+        if test {
+            status.title = "마이크 테스트 중…"
+        } else {
+            state = .recording
+            status.title = "녹음 중"
+            overlay.show("녹음 중 · 키를 떼면 입력", microphone: mic.name)
+        }
+        capture.onLevel = { [weak self, weak capture] db in
+            guard let self, let capture, self.recorder === capture else { return }
+            self.settings.updateLevel(db)
+            if !capture.isTest { self.overlay.update(db: db) }
+        }
+        capture.onFailure = { [weak self, weak capture] error in
+            guard let self, let capture, self.recorder === capture else { return }
+            self.cancelRecording()
+            self.notify("\(mic.name): \(error.localizedDescription)")
+        }
+        capture.start { [weak self, weak capture] in
+            guard let self, let capture, self.recorder === capture, test else { return }
+            let stop = DispatchWorkItem { [weak self] in self?.finishTest() }
+            self.testStop = stop
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3, execute: stop)
+        }
+    }
+
+    private func detachCapture() -> MicrophoneCapture? {
+        testStop?.cancel()
+        testStop = nil
+        let capture = recorder
         recorder = nil
+        settings.updateLevel(-160)
+        return capture
     }
 
     private func cancelRecording() {
-        stopAudio()
-        try? FileManager.default.removeItem(at: wav)
-        target = nil
-        ready()
+        guard let capture = detachCapture() else { return }
+        capture.stop { _ in if let file = capture.url { try? FileManager.default.removeItem(at: file) } }
+        if !capture.isTest { target = nil; ready() }
+        else if state == .ready { ready() }
+    }
+
+    private func finishTest() {
+        guard recorder?.isTest == true, let capture = detachCapture() else { return }
+        capture.stop { result in
+            guard self.recorder == nil else { return }
+            switch result {
+            case .success(let db):
+                self.status.title = db < MicrophoneCapture.quietDB ? self.quietMessage(capture) : "입력 확인 · " + capture.microphone.name
+            case .failure(let error): self.status.title = error.localizedDescription
+            }
+            self.refreshPermissions()
+        }
+    }
+
+    private func quietMessage(_ capture: MicrophoneCapture) -> String {
+        "입력 소리가 없었어요 — 마이크: " + capture.microphone.name
     }
 
     @objc private func interrupted() {
         held = false
         target = nil
-        if state == .recording { cancelRecording() }
+        if recorder != nil { cancelRecording() }
     }
 
     @objc private func focusChanged() {
@@ -251,16 +345,31 @@ final class App: NSObject, NSApplicationDelegate {
 
     private func finish() {
         let released = ProcessInfo.processInfo.systemUptime
-        stopAudio()
+        guard let capture = detachCapture(), let file = capture.url else { return }
         state = .processing
         overlay.show("전사 중…")
-        let worker = engine, file = wav
-        queue.async {
-            let result = Result { try worker.transcribe(file) }
-            try? FileManager.default.removeItem(at: file)
-            DispatchQueue.main.async {
-                do { try self.insert(result.get(), released: released) }
-                catch { self.report(error.localizedDescription) }
+        capture.stop { result in
+            do {
+                guard try result.get() >= MicrophoneCapture.quietDB else {
+                    try? FileManager.default.removeItem(at: file)
+                    self.target = nil
+                    self.ready()
+                    self.notify(self.quietMessage(capture))
+                    return
+                }
+                let worker = self.engine
+                self.queue.async {
+                    let decoded = Result { try worker.transcribe(file) }
+                    try? FileManager.default.removeItem(at: file)
+                    DispatchQueue.main.async {
+                        do { try self.insert(decoded.get(), released: released) }
+                        catch { self.report(error.localizedDescription) }
+                    }
+                }
+            } catch {
+                try? FileManager.default.removeItem(at: file)
+                self.ready()
+                self.notify(error.localizedDescription)
             }
         }
     }
@@ -287,7 +396,7 @@ final class App: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         permissionTimer?.invalidate()
-        stopAudio()
+        detachCapture()?.stop { _ in }
         transaction?.restore()
         try? FileManager.default.removeItem(at: temp)
         for monitor in monitors { NSEvent.removeMonitor(monitor) }

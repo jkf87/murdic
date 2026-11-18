@@ -24,7 +24,12 @@ sample: build/sample.wav
 build/sample.wav: tests/sample.py
 	"$(PYTHON)" tests/sample.py "$@"
 
-test: sample
+build/microphone-tests: mac/Microphones.swift mac/MicrophoneCapture.swift mac/Engine.swift tests/MicrophoneTests.swift
+	mkdir -p build
+	xcrun swiftc $^ -o "$@"
+
+test: sample build/microphone-tests
+	./build/microphone-tests
 	PYTHONDONTWRITEBYTECODE=1 "$(PYTHON)" -m unittest discover -s tests -v
 
 benchmark: all sample
