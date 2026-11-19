@@ -20,6 +20,10 @@ make run
 
 The first launch downloads the Whisper model. Once cached, default dictation works offline. The app lives at `~/Applications/murdic.app`. Keep the checkout in place because it contains the Python environment the app uses.
 
+## Windows
+
+On Windows 10/11 x64, install with the single `murdic-setup.exe`. No Python or administrator rights are needed. Hold **right Alt**, speak, and release to insert text at the cursor. On Korean keyboards where right Alt is the Han/Eng key, a short tap still switches the input language. The first launch downloads the model (about 486 MB), plus GPU libraries if an NVIDIA GPU is present. The installer is unsigned, so if SmartScreen appears, choose **More info → Run anyway**. In Notepad tests, median latency was 324 ms on GPU and 1,106 ms on CPU. See [windows/README.md](windows/README.md) (Korean) for details.
+
 ## Dictate into a text field
 
 1. Place your cursor in an app that accepts paste, such as Notes.
