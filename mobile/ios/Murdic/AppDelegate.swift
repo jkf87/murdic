@@ -31,6 +31,21 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     return true
   }
+
+  // 앱이 떠 있을 때 murdic://dictate?req=… (키보드 🎤)를 받으면 RN Linking의 'url' 이벤트로 넘긴다.
+  // RCTLinkingManager.application(_:open:options:)와 같은 알림·형식이다(헤더 import 없이 동작).
+  func application(
+    _ app: UIApplication,
+    open url: URL,
+    options: [UIApplication.OpenURLOptionsKey: Any] = [:]
+  ) -> Bool {
+    NotificationCenter.default.post(
+      name: NSNotification.Name("RCTOpenURLNotification"),
+      object: self,
+      userInfo: ["url": url.absoluteString]
+    )
+    return true
+  }
 }
 
 class ReactNativeDelegate: RCTDefaultReactNativeFactoryDelegate {

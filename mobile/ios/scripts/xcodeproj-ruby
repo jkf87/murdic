@@ -1,0 +1,6 @@
+#!/bin/bash
+# Homebrew CocoaPods 안의 xcodeproj gem으로 Ruby 스크립트를 돌린다.
+set -euo pipefail
+CP="$(brew --prefix cocoapods)"
+CELLAR="$(cd "$CP" && pwd -P)"
+GEM_HOME="$CELLAR/libexec" exec "$(brew --prefix ruby)/bin/ruby" "$@"
