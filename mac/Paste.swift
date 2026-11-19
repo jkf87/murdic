@@ -8,14 +8,16 @@ final class PasteTransaction {
     init(board: NSPasteboard, text: String) throws {
         let original = board.changeCount
         var copies: [NSPasteboardItem] = []
+        // Best effort: some apps put promised/lazy types on the clipboard whose data can no
+        // longer be read (the source app quit, file promises, …). Skip those types instead of
+        // refusing to dictate; whatever is readable is restored after the paste.
         for item in board.pasteboardItems ?? [] {
             let copy = NSPasteboardItem()
+            var kept = 0
             for type in item.types {
-                guard let data = item.data(forType: type), copy.setData(data, forType: type) else {
-                    throw DictationError.message("클립보드 내용을 보관할 수 없어 입력을 중단했습니다.")
-                }
+                if let data = item.data(forType: type), copy.setData(data, forType: type) { kept += 1 }
             }
-            copies.append(copy)
+            if kept > 0 { copies.append(copy) }
         }
         guard board.changeCount == original else {
             throw DictationError.message("클립보드가 바뀌어 입력을 중단했습니다.")
