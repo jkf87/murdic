@@ -230,11 +230,12 @@ final class KeyboardViewController: UIInputViewController {
       store.remove(SharedConfig.pendingKey)
       return
     }
-    textDocumentProxy.insertText(text)
+    // 빈 결과 = 앱이 환각 필터로 버린 것(docs/STT_TUNING.md 2). 아무것도 넣지 않고 알려만 준다.
+    if !text.isEmpty { textDocumentProxy.insertText(text) }
     // 넣은 뒤 본문은 지우고 consumed만 남긴다(같은 결과 두 번 입력 방지).
     store.write(SharedConfig.resultKey, ["req": req, "text": "", "finishedAt": finishedAt, "consumed": true])
     store.remove(SharedConfig.pendingKey)
-    setStatus("입력했습니다 ✓")
+    setStatus(text.isEmpty ? "인식된 말이 없어요. 🎤를 다시 눌러 주세요." : "입력했습니다 ✓")
   }
 
   private func startObservingResult() {
