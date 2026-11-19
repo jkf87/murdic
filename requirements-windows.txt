@@ -1,0 +1,9 @@
+# Python 3.11-3.13, 64-bit Windows. The Mac installation remains unchanged.
+faster-whisper>=1.2.1,<2
+# faster-whisper 1.2 uses av.open(metadata_errors=...), removed by newer PyAV.
+av>=11,<17
+numpy>=1.26,<3
+sounddevice>=0.5,<0.6
+pystray>=0.19.5,<0.20
+Pillow>=10,<13
+pywin32>=308; sys_platform == "win32"

@@ -4,6 +4,8 @@
 
 Hold right Option, speak Korean, and release to paste a cleaned-up sentence at your cursor. Dictation runs on your Mac.
 
+**Initial Windows support:** see [Windows setup and usage](docs/WINDOWS.md). Hold right Ctrl to dictate Korean locally using your CPU.
+
 **[Watch the 33-second demo ↗](https://murdic.netlify.app/en/#demo)** · [Video file](site/assets/demo.mp4) · [Before and after](https://murdic.netlify.app/en/#examples)
 
 [![Dictation into a text field on macOS](site/assets/demo-poster.jpg)](https://murdic.netlify.app/en/#demo)

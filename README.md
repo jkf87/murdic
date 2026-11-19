@@ -4,6 +4,8 @@
 
 오른쪽 Option을 누르고 말하면, 내 Mac에서 한국어를 정리해 커서에 입력합니다.
 
+**Windows 초기 지원:** [Windows 설치 및 사용법](docs/WINDOWS.md). 오른쪽 Ctrl을 누르고 말하면 CPU에서 한국어를 인식해 입력합니다.
+
 **[33초 데모 보기 ↗](https://murdic.netlify.app/#demo)** · [영상 파일](site/assets/demo.mp4) · [정리 전후 예시](https://murdic.netlify.app/#examples)
 
 [![텍스트 입력란에서 받아쓰는 실제 화면](site/assets/demo-poster.jpg)](https://murdic.netlify.app/#demo)

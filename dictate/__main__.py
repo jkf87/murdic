@@ -7,6 +7,10 @@ import time
 
 
 def main():
+    if sys.platform == "win32":
+        for stream in (sys.stdin, sys.stdout, sys.stderr):
+            if hasattr(stream, "reconfigure"):
+                stream.reconfigure(encoding="utf-8")
     parser = argparse.ArgumentParser()
     modes = parser.add_subparsers(dest="mode", required=True)
     modes.add_parser("serve")
