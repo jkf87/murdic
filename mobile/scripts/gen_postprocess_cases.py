@@ -109,11 +109,11 @@ def speech_windows(pcm: np.ndarray) -> int:
 
 cases = {
     "_source": {
-        "postprocess": pp.__file__,
-        "vad": vad_mod.__file__,
+        "postprocess": "jkf87/murmur core/src/murmur/postprocess.py",
+        "vad": "jkf87/murmur core/src/murmur/vad.py",
         "vad_backend": "webrtc" if vad_mod._HAS_WEBRTC else "rms",
         "rms_threshold": vad_mod.DEFAULT_RMS_THRESHOLD,
-        "filter_transcript": str(Path(args.mac_root) / "dictate" / "backend.py"),
+        "filter_transcript": "jkf87/murdic main dictate/backend.py",
         "term_corrections": pp.TERM_CORRECTIONS,
     },
     "hallucination": [{"input": s, "expected": pp.is_hallucination(s)} for s in HALLUCINATION_INPUTS],

@@ -1,10 +1,10 @@
 {
  "_source": {
-  "postprocess": "/Users/conanssam-m4/.murmur/core/src/murmur/postprocess.py",
-  "vad": "/Users/conanssam-m4/.murmur/core/src/murmur/vad.py",
+  "postprocess": "jkf87/murmur core/src/murmur/postprocess.py",
+  "vad": "jkf87/murmur core/src/murmur/vad.py",
   "vad_backend": "rms",
   "rms_threshold": 0.005,
-  "filter_transcript": "/Users/conanssam-m4/murmur-dictate/dictate/backend.py",
+  "filter_transcript": "jkf87/murdic main dictate/backend.py",
   "term_corrections": {
    "클드": "Claude",
    "클로드": "Claude",
