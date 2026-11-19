@@ -231,14 +231,50 @@
       </section>
       <section id="install" class="section">
         <div class="install">
-          <h2>Install on your Mac</h2>
-          <div class="downloads">
-            <a class="primary" href="https://github.com/jkf87/murdic/releases/latest/download/murdic-arm64.dmg">Download for macOS (DMG)</a>
-            <a class="primary" href="https://github.com/jkf87/murdic/releases/latest/download/murdic-setup.exe">Download for Windows</a>
+          <h2>Install</h2>
+          <div class="platforms">
+            <article class="platform">
+              <h3>macOS</h3>
+              <a class="primary" href="https://github.com/jkf87/murdic/releases/latest/download/murdic-arm64.dmg">Download for macOS (DMG)</a>
+              <ol>
+                <li>Open the DMG and drag murdic.app to Applications.</li>
+                <li>If macOS blocks the first launch, open System Settings → Privacy &amp; Security and choose "Open Anyway".</li>
+                <li>Allow Microphone, Accessibility and Input Monitoring, then let it download the speech model (about 481 MB).</li>
+                <li>Hold right Option, speak, and release to type.</li>
+              </ol>
+              <p class="note">Apple Silicon, macOS 14 or later</p>
+            </article>
+            <article class="platform">
+              <h3>Windows</h3>
+              <a class="primary" href="https://github.com/jkf87/murdic/releases/latest/download/murdic-setup.exe">Download for Windows</a>
+              <ol>
+                <li>Run murdic-setup.exe. No administrator rights needed.</li>
+                <li>If SmartScreen appears, choose More info → Run anyway.</li>
+                <li>The first launch downloads the speech model (about 486 MB), plus GPU files if you have an NVIDIA GPU.</li>
+                <li>Hold right Alt, speak, and release to type. Change the mic and hotkey from the tray icon.</li>
+              </ol>
+              <p class="note">Windows 10/11 x64</p>
+            </article>
+            <article class="platform soon">
+              <h3>Android <span class="badge">Coming soon</span></h3>
+              <ol>
+                <li>Install and open the murdic app, download the model and allow the microphone.</li>
+                <li>Turn on the murdic keyboard in Settings → System → Keyboard.</li>
+                <li>Switch to the murdic keyboard in any text field, hold the mic button and speak.</li>
+              </ol>
+              <p class="note">In development — follow the <a href="https://github.com/jkf87/murdic/tree/mobile">mobile branch</a>.</p>
+            </article>
+            <article class="platform soon">
+              <h3>iPhone <span class="badge">Coming soon</span></h3>
+              <ol>
+                <li>Install and open the murdic app, download the model and allow the microphone.</li>
+                <li>Add murdic in Settings → General → Keyboard → Keyboards → Add New Keyboard, and turn on Allow Full Access.</li>
+                <li>Tap the keyboard's mic button to open murdic, speak, then return to your app and the text is inserted.</li>
+              </ol>
+              <p class="note">iOS keyboards can't use the microphone, so dictation goes through the app. murdic never uses the network or logs keystrokes.</p>
+            </article>
           </div>
-          <p class="desc">
-            Open the DMG and drag murdic.app to Applications. It needs an Apple Silicon Mac running macOS 14 or later. We tested on macOS 26.5. The app is not notarized, so on first launch open System Settings → Privacy &amp; Security and choose "Open Anyway". The first run downloads the speech model (about 481 MB).
-          </p>
+          <h3 class="devhead">Development build (macOS)</h3>
           <p class="desc">
             To install the development build from source, use the commands below. Tested on Apple Silicon with macOS 26.5. Set up the developer tools
             with <code>xcode-select --install</code> and

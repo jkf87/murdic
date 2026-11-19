@@ -666,3 +666,36 @@ footer a {
     scroll-behavior: auto;
   }
 }
+
+.platforms {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin: 22px 0 30px;
+}
+.platform {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.platform .primary { align-self: flex-start; white-space: nowrap; }
+.platform ol { margin: 0; padding-left: 20px; color: var(--sub); }
+.platform li { margin: 4px 0; }
+.platform .note { margin: auto 0 0; font-size: 13px; color: var(--sub); }
+.platform.soon { border-style: dashed; }
+.badge {
+  display: inline-block;
+  font: 12px var(--mono);
+  color: var(--pine);
+  border: 1px solid var(--pine);
+  border-radius: 999px;
+  padding: 1px 8px;
+  vertical-align: middle;
+  margin-left: 6px;
+}
+.devhead { margin-top: 8px; }
