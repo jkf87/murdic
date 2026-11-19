@@ -12,8 +12,8 @@
 | 녹음(앱) | `@fugood/react-native-audio-pcm-stream@1.1.4` — 16 kHz 모노 16bit PCM을 base64 조각으로 받아 메모리에서 합친 뒤 `transcribeData(ArrayBuffer)` | whisper.rn과 같은 개발사, 파일을 거치지 않아 녹음이 디스크에 남지 않음 |
 | 모델 다운로드 | `@dr.pogodin/react-native-fs@2.38.1` 고정 (`react-native-fs`는 2025-02 이후 정체). 2.41은 네이티브 스펙의 `ArrayBuffer`를 RN 0.84 codegen이 못 읽어 Android 빌드 실패, 2.38.1이 RN 0.84.1 기준 마지막 버전 | 진행률·이어받기 없는 단순 다운로드, 크기 검증 후 `.part` → 이름 바꾸기 |
 | 복사 | `@react-native-clipboard/clipboard`, 공유는 RN `Share` | |
-| 모델 | HuggingFace `ggerganov/whisper.cpp`의 `base-q5_1`(60 MB) / `base`(148 MB) / `small-q5_1`(190 MB) / `small`(488 MB). **기본 `base`** | 아래 실측: 이 CPU(fp16 지원 arm64)에선 양자화 모델이 f16보다 느렸고 base가 가장 빠르면서 예문을 정확히 받았다. 실기기 실측 뒤 다시 정한다. 앱에서 받아 `<filesDir>/models/ggml-<id>.bin`에 둔다 |
-| 모델 선택 공유 | `<filesDir>/murdic-settings.json` `{"model":"base"}` | 앱(JS)과 Android IME(Kotlin)가 같은 파일을 읽는다 |
+| 모델 | HuggingFace `ggerganov/whisper.cpp`의 `base-q5_1`(60 MB) / `base`(148 MB) / `small-q5_1`(190 MB) / `small`(488 MB). **기본 `small`**(Murmur와 같은 모델·정밀도) | 품질 기준이 Murmur(whisper small, `docs/STT_TUNING.md`). 실측: base 계열은 도메인 힌트를 켜면 힌트 문구를 그대로 읊었다(아래 "전사 튜닝 — Android"). fp16 지원 CPU에선 small(f16)이 small-q5_1보다 빨랐다. 메모리(PSS 약 0.7~0.9 GB)가 부담인 기기는 실기기 실측 뒤 다시 정한다 앱에서 받아 `<filesDir>/models/ggml-<id>.bin`에 둔다 |
+| 모델 선택 공유 | `<filesDir>/murdic-settings.json` `{"model":"small","hintPreset":"none","properNouns":[],"termCorrections":[]}` | 앱(JS)과 Android IME(Kotlin)가 같은 파일을 읽는다 |
 | 정리 규칙 | `dictate/cleanup.py` → `mobile/src/cleanup.ts`(앱), `…/ime/Cleanup.kt`(Android IME) | IME는 RN 런타임 밖의 서비스라 JS를 부를 수 없음 |
 | 정리 예문 | 단일 원본 `mobile/shared/cleanup_cases.json` (`mobile/scripts/export_cleanup_cases.py`가 `tests/test_cleanup.py`에서 뽑음). Python(`tests/test_cleanup_cases.py`), jest, JUnit이 같은 JSON을 검사 | 세 구현이 어긋나지 않게 |
 | JS 정규식 | Python `\w` → `[\p{L}\p{N}_]` + `u` 플래그 | JS `\w`는 ASCII만 잡아 한글 경계가 틀어짐 |
@@ -21,7 +21,7 @@
 | JNI 문자열 | 전사 결과를 UTF-8 바이트 배열로 넘겨 Kotlin에서 디코드 | `NewStringUTF`는 깨진 UTF-8·4바이트 문자에서 크래시 가능 |
 | ABI | `reactNativeArchitectures=arm64-v8a,x86_64` | 실사용 기기는 arm64, armeabi-v7a·x86 빌드는 시간만 늘림. arm64는 fp16 변형과 armv8 기본 변형을 같이 넣고 `/proc/cpuinfo`로 고른다 |
 | IME 녹음 | `AudioRecord` `VOICE_RECOGNITION` 16 kHz, 마이크 버튼 누르는 동안. 누르는 순간 모델을 미리 열어 둠 | RECORD_AUDIO 권한은 앱에서 받는다(IME는 런타임 권한 요청 불가 → 상태줄을 누르면 앱이 열림) |
-| 무음·환각 | 녹음의 0.1초 창 RMS 최댓값이 0.01(약 −40 dBFS) 미만이면 전사하지 않고 안내. whisper의 `[음악]` 같은 대괄호 표기는 지운다(앱 `src/recorder.ts`·`src/transcriber.ts`, IME `PcmRecorder`·`Cleanup.stripAnnotations`, 같은 테스트 예) | 에뮬레이터 무음 입력에서 whisper가 "[뚜껑이의 상품을…]"을 만들어 그대로 입력됐다 |
+| 무음·환각 | Murmur·맥판과 같은 말소리 창(0.3초 창 RMS ≥ 0.005)이 0개면 전사하지 않는다. whisper의 `[음악]` 같은 대괄호 표기는 지운 뒤 환각 필터로 | 처음엔 임의 기준(0.1초 창 RMS 0.01)을 넣었다가 원본 기준으로 바꿈. 에뮬레이터 무음 입력에서 whisper가 "[뚜껑이의 상품을…]"을 만들어 그대로 입력됐었다 |
 | IME 디버그 훅 | 디버그 빌드에서만 `com.murdic.mobile.DEBUG_TRANSCRIBE_FILE` 방송을 받으면 WAV 파일을 같은 전사→정리→`commitText` 경로로 보낸다 | 에뮬레이터에서 사람이 말하지 않고 입력 경로를 검증하기 위해(`mobile/scripts/android-bench.sh`가 이걸로 모델별 실측). 릴리스 빌드(`debuggable=false`)에서는 등록하지 않음 |
 
 ## Android 개발 환경 (이 맥에 설치한 것, 2026-11-19)
@@ -91,8 +91,8 @@ IME 경로(`android-bench.sh`, 전사→정리→`commitText`, 3회, 모델은 �
 
 ### 테스트
 
-- jest 40건(정리 예문 35 + 딥링크 2 + 무음·주석 2 + 앱 렌더 1), `tsc --noEmit`
-- JUnit 35건(`./gradlew :app:testDebugUnitTest`: 정리 예문 33 + 무음·주석 2), Python `tests/test_cleanup_cases.py`
+- jest 157건(정리 예문 35 + 전사 후처리 원본 대조 114(IOS) + 연결·설정 5 + 딥링크 2 + 앱 렌더 1), `tsc --noEmit`
+- JUnit 42건(`./gradlew :app:testDebugUnitTest`: 정리 예문 33 + 전사 후처리 8(원본 대조 106건 포함) + 대괄호 1), Python `tests/test_cleanup_cases.py`
 - 세 구현이 같은 `mobile/shared/cleanup_cases.json`·`cleanup_extra_cases.json`을 검사
 
 ## iOS (IOS 작업자, 2026-11-19)
@@ -137,3 +137,32 @@ RN은 두 플랫폼이 JS를 같이 쓰므로 `mobile/src/postprocess.ts` 하나
 - 테스트: `mobile/scripts/gen_postprocess_cases.py`가 원본 코드(Murmur `postprocess.py`·`vad.py` + 맥판 main `filter_transcript`)로 `shared/postprocess_cases.json`(환각 58·용어 14·필터 20·말소리 창 14)을 만들고 `__tests__/postprocess.test.ts`가 대조 — 114개 통과. 일부러 틀린 구현(UTF-16 길이, 창 기준 2)은 각각 실패하는 것 확인.
 - 알려진 차이: 말소리 창 RMS는 원본이 float32, JS가 float64로 계산한다. 경계(0.005)에 아주 가까운 창에서만 갈릴 수 있다(예문은 경계 ±3%까지 일치).
 - iOS 키보드: 앱이 환각으로 버린 경우 `writeResult(req, '')` → 키보드는 아무것도 넣지 않고 "인식된 말이 없어요" 표시.
+
+### 전사 튜닝 — Android (ANDROID 작업자, 2026-11-19)
+
+앱(JS)은 위 `postprocess.ts`를 `src/transcriber.ts`에서 연결했다. **Android IME는 RN 밖의 서비스라 JS를 부를 수 없어** 같은 것을 Kotlin으로 한 번 더 옮겼다.
+
+| 구간 | 앱 (`src/transcriber.ts`) | Android IME (`ime/MurdicImeService.kt`) |
+| --- | --- | --- |
+| 말소리 창(0개면 전사 안 함) | `countSpeechWindows(pcm)` | `Postprocess.countSpeechWindows(audio)` |
+| 디코딩 | `{...STT_DECODE_OPTIONS, maxThreads: 4, prompt}` (greedy, `beamSize` 넘기지 않음) | JNI `murdic_whisper.cpp`에 명시: `temperature 0`, `temperature_inc 0`, `no_context`, `no_speech_thold 0.6`, `logprob_thold −1.0`, `initial_prompt` (whisper.cpp 기본값에 기대지 않음) |
+| 힌트 | `buildPrompt(hintPreset, properNouns)` | `Postprocess.buildPrompt` (프리셋 7개 글자까지 같음) |
+| 전사 뒤 | `stripAnnotations` → `filterTranscript(raw, windows, termCorrections)` → `clean` | 같은 순서, `Cleanup.stripAnnotations` → `Postprocess.filterTranscript` → `Cleanup.clean` |
+| 버렸을 때 | 입력 없음, "잡음으로 보고 넣지 않았어요", iOS 키보드 모드면 `writeResult(req, '')` | 입력 없음, 같은 문구 |
+
+- 설정은 `<filesDir>/murdic-settings.json` 하나(`model`, `hintPreset`, `properNouns`, `termCorrections`)를 앱이 쓰고 IME가 매 전사 때 읽는다. 앱 설정 화면 "받아쓰기 힌트": 프리셋 칩, 고유명사(쉼표), 용어 고치기(한 줄에 `틀린 말 = 바른 말`, Murmur 기본 사전 뒤에 적용). 원본 순서대로라 "클로드 코드"는 "Claude 코드"가 된다(사양대로 둠).
+- Kotlin 이식(`ime/Postprocess.kt`)은 파이썬 의미에 맞춰 코드포인트 단위, 파이썬 공백 집합, 패턴 3은 정규식 대신 코드포인트 판정(Android ICU 정규식이 `UNICODE_CHARACTER_CLASS`를 지원하지 않음). JUnit `PostprocessTest`가 IOS의 `shared/postprocess_cases.json`(원본 Python 생성) 4묶음 106건 + buildPrompt 3 + 사용자 사전 1을 검사, 모두 통과.
+
+에뮬레이터 검증(IME 디버그 훅 → 연락처 메모 칸, base·small):
+
+| 음성 (Yuna) | 말소리 창 | 결과 |
+| --- | --- | --- |
+| "감사합니다" 0.82초 | 3 | 입력됨 "감사합니다." (맥판 예외) |
+| "감사합니다" 빠르게 0.6초 | 2 | 버림(환각 문구 규칙) |
+| "클로드 코드로 깃허브 API를 호출해요", 힌트 없음 | 10 | base "Claude 코드로 기타브 API를 호출해요." / small "Claude 코드로 기탑 API를 호출해요." |
+| 같은 음성, IT 프리셋 + "머딕" | 10 | **small·small-q5_1 "Claude Code로 GitHub API를 호출해요."** / **base·base-q5_1은 말 대신 힌트 "Claude Code, HWPX, GitHub, API"를 읊음** |
+| "음, 내일 세 시, 아니 네 시에…" IT 프리셋 | 11 | "내일 4시에 회의실에서 만나요." (회귀 없음) |
+
+- 앱(whisper.rn) 경로도 small + IT 프리셋으로 같은 음성 → "Claude Code로 GitHub API를 호출해요."(2,655 ms) 확인.
+- 힌트 되풀이는 원본(Murmur)에는 없는 필터라 넣지 않았다. 대신 기본 모델을 small로 두고 base 계열 설명에 "힌트를 켜면 힌트 문구를 되풀이할 수 있음"을 적었다. base를 꼭 써야 한다면 "결과가 프롬프트의 일부와 같으면 버림" 필터를 따로 정해야 한다(사람이 결정).
+
