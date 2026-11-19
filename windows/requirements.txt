@@ -1,0 +1,7 @@
+# murdic for Windows — Python 3.13 x64 (verified 2026-11-19)
+faster-whisper==1.2.1
+ctranslate2==4.9.0
+numpy==2.5.5
+SoundCard==0.4.6
+pystray==0.19.5
+pillow==13.0.0

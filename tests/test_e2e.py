@@ -1,3 +1,4 @@
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -8,7 +9,10 @@ import unittest
 from unittest.mock import patch
 import wave
 
-from dictate.backend import optional_hook
+if importlib.util.find_spec("murmur") is None:  # Windows uses windows/tests/test_e2e_windows.py
+    raise unittest.SkipTest("Murmur core (macOS backend) is not installed")
+
+from dictate.backend import optional_hook  # noqa: E402
 
 
 class IntegrationTests(unittest.TestCase):

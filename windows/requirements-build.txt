@@ -1,0 +1,4 @@
+-r requirements.txt
+pyinstaller==6.22.3
+# Optional GPU component of the installer (cuBLAS only; cuDNN is not needed, see docs/windows-engine.md)
+nvidia-cublas-cu12==12.9.2.10

@@ -13,3 +13,6 @@ TASK2_SITE.md
 # Local Netlify folder
 .netlify
 TASK3_MIC.md
+
+# Windows build output
+dist/
