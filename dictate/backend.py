@@ -9,14 +9,13 @@ import time
 import wave
 
 import numpy as np
-from huggingface_hub import snapshot_download
-from huggingface_hub.errors import LocalEntryNotFoundError
 from murmur.audio import SAMPLE_RATE
-from murmur.stt import DEFAULT_MODEL, WhisperSTT
+from murmur.stt import WhisperSTT
 from murmur.vad import VoiceActivityDetector
 from murmur.postprocess import apply_term_corrections, is_hallucination
 
 from .cleanup import clean
+from .model import ModelError, resolve as resolve_model
 
 CONFIG_DIR = Path.home() / "Library/Application Support/murdic"
 
@@ -57,15 +56,11 @@ def optional_hook(text, directory):
 
 
 class Pipeline:
-    def __init__(self, directory=CONFIG_DIR):
+    def __init__(self, directory=CONFIG_DIR, report=None, refetch=False):
         self.directory = directory
-        try:
-            model = snapshot_download(DEFAULT_MODEL, local_files_only=True)
-        except LocalEntryNotFoundError:
-            model = DEFAULT_MODEL
-        self.stt = WhisperSTT(model)
+        self.stt = WhisperSTT(resolve_model(directory, report, refetch))
         if not self.stt.preload():
-            raise RuntimeError("Murmur 모델을 불러올 수 없습니다. 모델 캐시와 MLX 설치를 확인하세요.")
+            raise ModelError("음성 모델을 불러올 수 없습니다. 다시 받기를 누르거나 엔진을 다시 시작하세요.")
 
     def run(self, path):
         started = time.perf_counter()
