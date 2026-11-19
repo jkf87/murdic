@@ -14,6 +14,7 @@ from huggingface_hub.errors import LocalEntryNotFoundError
 from murmur.audio import SAMPLE_RATE
 from murmur.stt import DEFAULT_MODEL, WhisperSTT
 from murmur.vad import VoiceActivityDetector
+from murmur.postprocess import apply_term_corrections, is_hallucination
 
 from .cleanup import clean
 
@@ -72,7 +73,8 @@ class Pipeline:
         raw = ""
         vad = VoiceActivityDetector()
         # A short phrase surrounded by silence should survive the voice gate.
-        if any(vad.has_speech(audio[i:i + 4800]) for i in range(0, len(audio), 4800)):
+        speech_windows = sum(vad.has_speech(audio[i:i + 4800]) for i in range(0, len(audio), 4800))
+        if speech_windows:
             hints = self.directory / "hints.txt"
             prompt = ", ".join(line.strip() for line in hints.read_text().splitlines()
                                if line.strip()) if hints.exists() else None
@@ -80,9 +82,29 @@ class Pipeline:
             if not result.language and not result.inference_ms:
                 raise RuntimeError("Murmur 전사 오류. 메뉴에서 엔진을 다시 시작하세요.")
             raw = result.text
-        text = optional_hook(clean(raw), self.directory)
+        text = filter_transcript(raw, speech_windows)
+        text = optional_hook(clean(text), self.directory) if text else ""
         return dict(text=text, raw=raw, audio_s=len(audio) / SAMPLE_RATE,
                     processing_ms=round((time.perf_counter() - started) * 1000, 1))
+
+
+# Murmur's hallucination list includes phrases people really dictate ("감사합니다").
+# Trust them when the VAD heard at least ~0.9 s of speech (three 0.3 s windows).
+REAL_SPEECH_WINDOWS = 3
+_PHRASES = {"도움이 되었습니다", "감사합니다", "구독과 좋아요", "날씨였습니다",
+            "시청해 주셔서 감사합니다", "시청해주셔서 감사합니다", "좋아요와 구독"}
+
+
+def filter_transcript(raw, speech_windows):
+    """Murmur post-processing: drop Whisper hallucinations, then fix known terms."""
+    text = (raw or "").strip()
+    if not text:
+        return ""
+    if is_hallucination(text):
+        phrase_only = text.rstrip(".") in _PHRASES and speech_windows >= REAL_SPEECH_WINDOWS
+        if not phrase_only:
+            return ""
+    return apply_term_corrections(text)
 
 
 def serve(pipeline, output):
