@@ -1,0 +1,574 @@
+{
+ "_source": {
+  "postprocess": "/Users/conanssam-m4/.murmur/core/src/murmur/postprocess.py",
+  "vad": "/Users/conanssam-m4/.murmur/core/src/murmur/vad.py",
+  "vad_backend": "rms",
+  "rms_threshold": 0.005,
+  "filter_transcript": "/Users/conanssam-m4/murmur-dictate/dictate/backend.py",
+  "term_corrections": {
+   "클드": "Claude",
+   "클로드": "Claude",
+   "클라우드 코드": "Claude Code",
+   "클드 코드": "Claude Code",
+   "쉬프트": "시프트",
+   "코덱스": "Codex"
+  }
+ },
+ "hallucination": [
+  {
+   "input": "",
+   "expected": true
+  },
+  {
+   "input": " ",
+   "expected": true
+  },
+  {
+   "input": "ㅁ",
+   "expected": true
+  },
+  {
+   "input": "a",
+   "expected": true
+  },
+  {
+   "input": "네",
+   "expected": true
+  },
+  {
+   "input": "네.",
+   "expected": false
+  },
+  {
+   "input": "  감사  ",
+   "expected": false
+  },
+  {
+   "input": "네 네 네",
+   "expected": true
+  },
+  {
+   "input": "네 네 네 네",
+   "expected": true
+  },
+  {
+   "input": "Hello hello HELLO.",
+   "expected": true
+  },
+  {
+   "input": "네, 네! 아니요",
+   "expected": true
+  },
+  {
+   "input": "a b c",
+   "expected": false
+  },
+  {
+   "input": "하나 둘 하나 둘",
+   "expected": true
+  },
+  {
+   "input": "안녕하세요 반갑습니다 좋은 아침",
+   "expected": false
+  },
+  {
+   "input": "오늘 회의는 세 시에 합니다.",
+   "expected": false
+  },
+  {
+   "input": "안녕하세요안녕하세요안녕하세요",
+   "expected": false
+  },
+  {
+   "input": "abcdeabcdeabcde",
+   "expected": false
+  },
+  {
+   "input": "abcdabcdabcd",
+   "expected": false
+  },
+  {
+   "input": "가나다라마가나다라마가나다라마끝",
+   "expected": false
+  },
+  {
+   "input": "좋아요 좋아요 좋아요 정말로요",
+   "expected": true
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "expected": true
+  },
+  {
+   "input": "감사합니다",
+   "expected": true
+  },
+  {
+   "input": "감사합니다.",
+   "expected": true
+  },
+  {
+   "input": "감사합니다..",
+   "expected": true
+  },
+  {
+   "input": "감사합니다!",
+   "expected": false
+  },
+  {
+   "input": "감사합니다 여러분",
+   "expected": false
+  },
+  {
+   "input": "시청해 주셔서 감사합니다.",
+   "expected": true
+  },
+  {
+   "input": "시청해주셔서 감사합니다",
+   "expected": true
+  },
+  {
+   "input": "구독과 좋아요",
+   "expected": true
+  },
+  {
+   "input": "좋아요와 구독.",
+   "expected": true
+  },
+  {
+   "input": "도움이 되었습니다",
+   "expected": true
+  },
+  {
+   "input": "날씨였습니다.",
+   "expected": true
+  },
+  {
+   "input": "오늘 날씨였습니다",
+   "expected": false
+  },
+  {
+   "input": "... ... ... ... ...",
+   "expected": true
+  },
+  {
+   "input": "음... 그... 저... 네... 아...",
+   "expected": true
+  },
+  {
+   "input": "음... 그... 저... 네...",
+   "expected": false
+  },
+  {
+   "input": "Привет мир как дела",
+   "expected": true
+  },
+  {
+   "input": "안녕 Привет",
+   "expected": true
+  },
+  {
+   "input": "안녕하세요 😀",
+   "expected": false
+  },
+  {
+   "input": "😀😀",
+   "expected": true
+  },
+  {
+   "input": "안녕하세요 ✅ 확인했습니다 ✅",
+   "expected": false
+  },
+  {
+   "input": "テストです。ありがとう",
+   "expected": false
+  },
+  {
+   "input": "中文测试一下可以吗",
+   "expected": false
+  },
+  {
+   "input": "가격은 30% 할인, (약) 5,000원~",
+   "expected": false
+  },
+  {
+   "input": "「인용」『책』（괄호）、。",
+   "expected": false
+  },
+  {
+   "input": "탭\t구분\n줄바꿈",
+   "expected": false
+  },
+  {
+   "input": "A·B·C…",
+   "expected": false
+  },
+  {
+   "input": "Cost: $5 & tax #1",
+   "expected": true
+  },
+  {
+   "input": "ﾃｽﾄ半角カナ",
+   "expected": true
+  },
+  {
+   "input": "Ｆｕｌｌｗｉｄｔｈ 전각",
+   "expected": true
+  },
+  {
+   "input": "à la carte café",
+   "expected": false
+  },
+  {
+   "input": "Straße groß",
+   "expected": true
+  },
+  {
+   "input": "가나다라마😀",
+   "expected": true
+  },
+  {
+   "input": "가나다라마바😀",
+   "expected": false
+  },
+  {
+   "input": "가나다라마바사😀",
+   "expected": false
+  },
+  {
+   "input": "😀가",
+   "expected": true
+  },
+  {
+   "input": "가😀가😀가😀가😀가😀가😀",
+   "expected": true
+  },
+  {
+   "input": "𠀀𠀁𠀂𠀃𠀄𠀀𠀁𠀂𠀃𠀄𠀀𠀁𠀂𠀃𠀄",
+   "expected": true
+  }
+ ],
+ "terms": [
+  {
+   "input": "클드",
+   "expected": "Claude"
+  },
+  {
+   "input": "클로드",
+   "expected": "Claude"
+  },
+  {
+   "input": "클로드 코드",
+   "expected": "Claude 코드"
+  },
+  {
+   "input": "클라우드 코드",
+   "expected": "Claude Code"
+  },
+  {
+   "input": "클드 코드",
+   "expected": "Claude 코드"
+  },
+  {
+   "input": "쉬프트 키",
+   "expected": "시프트 키"
+  },
+  {
+   "input": "코덱스",
+   "expected": "Codex"
+  },
+  {
+   "input": "코덱스랑 클로드로 작업해요",
+   "expected": "Codex랑 Claude로 작업해요"
+  },
+  {
+   "input": "클라우드 코드로 쉬프트+엔터",
+   "expected": "Claude Code로 시프트+엔터"
+  },
+  {
+   "input": "클로드클로드",
+   "expected": "ClaudeClaude"
+  },
+  {
+   "input": "그냥 문장입니다.",
+   "expected": "그냥 문장입니다."
+  },
+  {
+   "input": "클라우드",
+   "expected": "클라우드"
+  },
+  {
+   "input": "클라우드 코드 클드 코드 코덱스",
+   "expected": "Claude Code Claude 코드 Codex"
+  },
+  {
+   "input": "",
+   "expected": ""
+  }
+ ],
+ "filter": [
+  {
+   "input": "시청해 주셔서 감사합니다.",
+   "speechWindows": 1,
+   "expected": ""
+  },
+  {
+   "input": "감사합니다",
+   "speechWindows": 0,
+   "expected": ""
+  },
+  {
+   "input": "감사합니다",
+   "speechWindows": 2,
+   "expected": ""
+  },
+  {
+   "input": "감사합니다",
+   "speechWindows": 3,
+   "expected": "감사합니다"
+  },
+  {
+   "input": "감사합니다.",
+   "speechWindows": 4,
+   "expected": "감사합니다."
+  },
+  {
+   "input": "감사합니다..",
+   "speechWindows": 9,
+   "expected": "감사합니다.."
+  },
+  {
+   "input": "시청해주셔서 감사합니다",
+   "speechWindows": 3,
+   "expected": "시청해주셔서 감사합니다"
+  },
+  {
+   "input": "구독과 좋아요",
+   "speechWindows": 10,
+   "expected": "구독과 좋아요"
+  },
+  {
+   "input": "감사합니다 감사합니다 감사합니다",
+   "speechWindows": 10,
+   "expected": ""
+  },
+  {
+   "input": "네 네 네 네",
+   "speechWindows": 5,
+   "expected": ""
+  },
+  {
+   "input": "ㅁ",
+   "speechWindows": 5,
+   "expected": ""
+  },
+  {
+   "input": "",
+   "speechWindows": 5,
+   "expected": ""
+  },
+  {
+   "input": "   ",
+   "speechWindows": 5,
+   "expected": ""
+  },
+  {
+   "input": null,
+   "speechWindows": 3,
+   "expected": ""
+  },
+  {
+   "input": "코덱스랑 클로드로 작업해요",
+   "speechWindows": 6,
+   "expected": "Codex랑 Claude로 작업해요"
+  },
+  {
+   "input": "  클로드 코드 열어 줘  ",
+   "speechWindows": 4,
+   "expected": "Claude 코드 열어 줘"
+  },
+  {
+   "input": "😀😀😀 감사합니다",
+   "speechWindows": 9,
+   "expected": ""
+  },
+  {
+   "input": "오늘 회의는 세 시에 합니다.",
+   "speechWindows": 0,
+   "expected": "오늘 회의는 세 시에 합니다."
+  },
+  {
+   "input": "... ... ... ... ...",
+   "speechWindows": 20,
+   "expected": ""
+  },
+  {
+   "input": "날씨였습니다",
+   "speechWindows": 3,
+   "expected": "날씨였습니다"
+  }
+ ],
+ "speechWindows": [
+  {
+   "name": "silence_1s",
+   "pcm": [
+    {
+     "const": 0,
+     "n": 16000
+    }
+   ],
+   "expected": 0
+  },
+  {
+   "name": "loud_1s",
+   "pcm": [
+    {
+     "square": 3000,
+     "period": 32,
+     "n": 16000
+    }
+   ],
+   "expected": 4
+  },
+  {
+   "name": "loud_0_9s_exact",
+   "pcm": [
+    {
+     "square": 3000,
+     "period": 32,
+     "n": 14400
+    }
+   ],
+   "expected": 3
+  },
+  {
+   "name": "loud_0_6s_then_silence",
+   "pcm": [
+    {
+     "square": 3000,
+     "period": 32,
+     "n": 9600
+    },
+    {
+     "const": 0,
+     "n": 9600
+    }
+   ],
+   "expected": 2
+  },
+  {
+   "name": "quiet_below_threshold",
+   "pcm": [
+    {
+     "square": 150,
+     "period": 32,
+     "n": 16000
+    }
+   ],
+   "expected": 0
+  },
+  {
+   "name": "near_threshold_below",
+   "pcm": [
+    {
+     "square": 160,
+     "period": 32,
+     "n": 16000
+    }
+   ],
+   "expected": 0
+  },
+  {
+   "name": "near_threshold_above",
+   "pcm": [
+    {
+     "square": 170,
+     "period": 32,
+     "n": 16000
+    }
+   ],
+   "expected": 4
+  },
+  {
+   "name": "dc_offset_above",
+   "pcm": [
+    {
+     "const": 200,
+     "n": 16000
+    }
+   ],
+   "expected": 4
+  },
+  {
+   "name": "partial_last_window",
+   "pcm": [
+    {
+     "const": 0,
+     "n": 4800
+    },
+    {
+     "square": 3000,
+     "period": 32,
+     "n": 100
+    }
+   ],
+   "expected": 1
+  },
+  {
+   "name": "tiny_tail_window",
+   "pcm": [
+    {
+     "square": 3000,
+     "period": 32,
+     "n": 4801
+    }
+   ],
+   "expected": 2
+  },
+  {
+   "name": "burst_inside_window",
+   "pcm": [
+    {
+     "const": 0,
+     "n": 2000
+    },
+    {
+     "square": 12000,
+     "period": 32,
+     "n": 400
+    },
+    {
+     "const": 0,
+     "n": 2400
+    }
+   ],
+   "expected": 1
+  },
+  {
+   "name": "clip_max",
+   "pcm": [
+    {
+     "square": 32767,
+     "period": 2,
+     "n": 9600
+    }
+   ],
+   "expected": 2
+  },
+  {
+   "name": "clip_min_const",
+   "pcm": [
+    {
+     "const": -32768,
+     "n": 4800
+    }
+   ],
+   "expected": 1
+  },
+  {
+   "name": "empty",
+   "pcm": [],
+   "expected": 0
+  }
+ ]
+}
