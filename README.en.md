@@ -8,7 +8,16 @@ Hold right Option, speak Korean, and release to paste a cleaned-up sentence at y
 
 [![Dictation into a text field on macOS](site/assets/demo-poster.jpg)](https://murdic.netlify.app/en/#demo)
 
-## Install in three lines
+## Download the DMG
+
+1. Download [murdic-arm64.dmg](https://github.com/jkf87/murdic/releases/latest/download/murdic-arm64.dmg) and open it.
+2. Drag `murdic.app` to **Applications**.
+3. If macOS blocks the first launch, open **System Settings → Privacy & Security**, choose **Open Anyway**, then open murdic again. In Terminal you can also run `xattr -dr com.apple.quarantine /Applications/murdic.app`.
+4. On first launch, murdic downloads the Whisper model (about 481 MB). The settings window shows progress and offers **Retry** if the download fails.
+
+The DMG contains Python and every package, so there is nothing else to install. It needs an Apple Silicon Mac running macOS 14 or later. We tested on macOS 26.5. The app is not notarized, so step 3 is required. To build the release yourself, see the [release notes](docs/RELEASE.md).
+
+## Developer install (from source)
 
 Use an Apple Silicon Mac. We tested macOS 26.5 with Homebrew Python 3.14.6. Install the Command Line Tools with `xcode-select --install` and Homebrew Python with `brew install python`. The Murmur core requires Python 3.11 or later.
 
@@ -41,7 +50,7 @@ The **마이크** (Microphone) menu shows the active input. Choose a device ther
 
 ## Permissions
 
-Allow **Microphone** for recording and **Accessibility** for pasting. If macOS requires **Input Monitoring** for the global shortcut, enable it too. To add a missing entry, click **+**, press **⌘⇧G**, and enter `~/Applications/murdic.app`. The settings window shows a green check for each available permission. Reopen the app if macOS asks.
+Allow **Microphone** for recording and **Accessibility** for pasting. If macOS requires **Input Monitoring** for the global shortcut, enable it too. To add a missing entry, click **+**, press **⌘⇧G**, and enter `~/Applications/murdic.app` for the development build or `/Applications/murdic.app` for the DMG. The settings window shows a green check for each available permission. Reopen the app if macOS asks.
 
 ## Measured latency
 

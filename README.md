@@ -8,7 +8,16 @@
 
 [![텍스트 입력란에서 받아쓰는 실제 화면](site/assets/demo-poster.jpg)](https://murdic.netlify.app/#demo)
 
-## 세 줄로 설치
+## DMG 다운로드
+
+1. [murdic-arm64.dmg](https://github.com/jkf87/murdic/releases/latest/download/murdic-arm64.dmg)를 받아 엽니다.
+2. `murdic.app`을 **Applications**로 끌어 놓습니다.
+3. 처음 실행할 때 macOS가 막으면 **시스템 설정 → 개인정보 보호 및 보안**에서 **"그래도 열기"**를 누르고 다시 엽니다. 터미널에서는 `xattr -dr com.apple.quarantine /Applications/murdic.app`도 됩니다.
+4. 첫 실행에는 Whisper 모델(약 481 MB)을 받습니다. 설정 창에서 진행률을 볼 수 있고, 실패하면 **다시 받기**를 누르세요.
+
+DMG에는 Python과 패키지가 들어 있어서 따로 설치할 것이 없습니다. macOS 14 이상의 Apple Silicon Mac이 필요하고, 검증은 macOS 26.5에서 했습니다. 공증되지 않은 앱이라 위 3번 단계가 필요합니다. 배포판을 직접 만드는 방법은 [배포 문서](docs/RELEASE.md)에 있습니다.
+
+## 개발자 설치 (소스에서)
 
 Apple Silicon Mac에서 사용합니다. 검증 환경은 macOS 26.5, Homebrew Python 3.14.6입니다. 먼저 `xcode-select --install`로 Command Line Tools를, `brew install python`으로 Python을 준비하세요. Murmur 코어는 Python 3.11 이상을 요구합니다.
 
@@ -41,7 +50,7 @@ make run
 
 ## 권한
 
-앱의 설정 창에서 **마이크**를 허용하고 **손쉬운 사용**을 켜세요. 전역 단축키에 필요한 경우 **입력 모니터링**도 켭니다. 목록에 앱이 없으면 **+ → ⌘⇧G**로 `~/Applications/murdic.app`을 선택하세요. 허용된 항목은 앱에 초록색 체크가 표시됩니다. macOS가 재실행을 요청하면 앱을 다시 엽니다.
+앱의 설정 창에서 **마이크**를 허용하고 **손쉬운 사용**을 켜세요. 전역 단축키에 필요한 경우 **입력 모니터링**도 켭니다. 목록에 앱이 없으면 **+ → ⌘⇧G**로 앱을 선택하세요. 개발 빌드는 `~/Applications/murdic.app`, DMG 설치본은 `/Applications/murdic.app`입니다. 허용된 항목은 앱에 초록색 체크가 표시됩니다. macOS가 재실행을 요청하면 앱을 다시 엽니다.
 
 ## 지연 실측
 

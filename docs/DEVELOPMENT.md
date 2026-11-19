@@ -36,6 +36,10 @@ On an M5 MacBook Air (2026-11-19), the built-in mic captured the speaker-played 
 
 The default installation uses one path in the user's Applications directory and reuses a certificate named `murdic Local Code Signing` from the login keychain. Keep this signing identity across updates. Quit murdic before rebuilding. `make install` installs the app and `make run` opens it. The build prefers the checkout's `.venv/bin/python`. Override it with `make PYTHON=/absolute/path/to/python run` for a fresh build using another environment.
 
+## Release DMG
+
+`make dmg` builds the self-contained app and `build/release/murdic-<version>-arm64.dmg`. It bundles its own Python and packages, leaves the development build unchanged, and does not install anything into `~/Applications`. See [RELEASE.md](RELEASE.md) for signing, first-run steps, and the outside-bundle checks (`scripts/verify-release.py`).
+
 ## Optional LLM hook
 
 Put an executable named `llm-cleanup` in `~/Library/Application Support/murdic/` and set `MURMUR_LLM_KEY` in the app's environment. The hook receives locally cleaned text on stdin and returns its edit on stdout. Missing credentials, an empty result, or a failure falls back to local cleanup. The timeout is four seconds. The [example](../examples/llm-cleanup) also reads `MURMUR_LLM_URL` and `MURMUR_LLM_MODEL`. Quit the menu app and run its installed executable from the configured shell to pass these variables to the worker.
