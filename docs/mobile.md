@@ -52,3 +52,28 @@ cd mobile && npm install
 emulator -avd murdic_api36 &
 npx react-native run-android        # Metro가 함께 뜬다
 ```
+
+## iOS (IOS 작업자, 2026-11-19)
+
+설계·흐름은 `docs/ios-keyboard.md`. 여기는 결정과 상태만.
+
+| 항목 | 결정 | 이유 |
+| --- | --- | --- |
+| 키보드 | 네이티브 Swift 타깃 `MurdicKeyboard`(`com.murdic.mobile.keyboard`), RN 없음 | 키보드 메모리 한도가 작고 마이크를 못 씀 |
+| 앱 열기 | 응답자 체인에서 `UIApplication`의 `openURL:options:completionHandler:` 호출 | 키보드에서 `extensionContext.open`이 안 됨. 실기기·심사 확인 필요 |
+| 결과 전달 | App Group `group.com.murdic.mobile` UserDefaults JSON + Darwin 알림 `com.murdic.mobile.result` | 키보드가 떠 있을 때도 바로 감지 |
+| 시각 단위 | `createdAt`·`finishedAt` 밀리초 | JS가 `Date.now() - createdAt`으로 비교 |
+| 앱 모듈 | `MurdicShared`(Objective-C, 브리징 헤더 없음) — `writeResult`, `readPending`(5분 지난 것·이미 결과 보낸 것은 null) | New Arch interop 층으로 `NativeModules`에서 보임 |
+| URL 전달 | `AppDelegate.application(_:open:options:)`에서 `RCTOpenURLNotification` 직접 발송 | `RCTLinkingManager`와 같은 형식, Swift 헤더 import 문제 회피 |
+| 전체 접근 | `RequestsOpenAccess = YES`, 꺼져 있으면 키보드에 설정 안내 | App Group 공유에 필요 |
+| Xcode 프로젝트 | `mobile/ios/scripts/add_keyboard_target.rb`(Homebrew CocoaPods의 xcodeproj gem)로 타깃·Embed·entitlements 추가, 재실행 안전 | 프로젝트를 사람 손 없이 재현 |
+
+### iOS 개발 환경(이 맥, 2026-11-19)
+
+- CocoaPods 1.17.0 (Homebrew, Ruby 4.0.10 함께 설치). `cd mobile/ios && pod install` — Xcode 없이도 성공(56초, pod 78개: whisper-rn 0.7.4, RNAudioPcmStream 1.1.4 포함).
+- **Xcode 없음**(Command Line Tools만) → iOS 빌드·시뮬레이터 불가. 설치 후 `sudo xcode-select -s /Applications/Xcode.app/Contents/Developer`.
+- 빌드 전 검사: 키보드 Swift는 Mac Catalyst UIKit으로 `swiftc -typecheck -application-extension` 통과, `MurdicShared.m`은 `clang -fsyntax-only` 통과(일부러 틀린 코드는 실패하는 것 확인). 실제 iOS 빌드는 아직 아니다.
+
+### iOS 실측
+
+아직 없다(Xcode 설치 후 시뮬레이터에서 base·small 모델 로드 시간, 5초 한국어 전사 지연, 메모리 최고치를 잰다). 시뮬레이터는 맥 CPU/GPU를 써서 실기기와 다르다.

@@ -53,13 +53,13 @@
   - `writeResult(req: string, text: string): Promise<void>`
   - `readPending(): Promise<{req: string, createdAt: number} | null>`
   - Android에는 이 모듈이 없다. JS는 `Platform.OS === 'ios' && NativeModules.MurdicShared`일 때만 부른다.
-- 녹음 파일은 앱 `tmp/`에 두고 전사 뒤 지운다. 모델 파일은 앱 `Application Support/models/`에 두며 App Group에는 넣지 않는다(키보드가 쓰지 않음).
+- 녹음은 `@fugood/react-native-audio-pcm-stream`으로 16 kHz 모노 PCM을 메모리에 모아 `transcribeData`로 넘긴다(디스크에 남지 않음, ANDROID 작업자 구현). 모델 파일은 앱 `Documents/models/`에 두며 App Group에는 넣지 않는다(키보드가 쓰지 않음).
 
 ### 3.3 키보드 쪽 (⑦~⑨)
 
-- 결과 감지: `viewWillAppear`에서 한 번 읽고, 키보드가 떠 있는 동안에는 Darwin 알림(`CFNotificationCenterGetDarwinNotifyCenter`, 이름 `com.murdic.mobile.result`)으로 다시 읽는다.
-- 삽입 조건: `pending.req == result.req`, `now - finishedAt < 300초`, `consumed != true`. 조건이 맞으면 `insertText` 후 `consumed = true`.
-- 주의: 앱 복귀 직후 `textDocumentProxy`가 새 입력란과 아직 연결되지 않았을 수 있다. 첫 시도가 `documentContextBeforeInput == nil`이면 `textDidChange` 콜백에서 한 번 더 시도한다. **[검증 필요]**
+- 결과 감지: `viewDidAppear`·`textDidChange`에서 읽고, 키보드가 떠 있는 동안에는 Darwin 알림(`CFNotificationCenterGetDarwinNotifyCenter`, 이름 `com.murdic.mobile.result`)으로 다시 읽는다.
+- 삽입 조건: `pending.req == result.req`, `now - finishedAt < 5분`, `consumed != true`. 조건이 맞으면 `insertText` 후 `consumed = true`.
+- 주의: 앱 복귀 직후 `textDocumentProxy`가 입력란과 아직 연결되지 않았을 수 있다. 그래서 `viewWillAppear`가 아니라 `viewDidAppear`에서 넣고, `textDidChange`에서도 다시 시도한다(consumed로 한 번만). **[검증 필요]**
 
 ### 3.4 App Group 저장 형식
 
@@ -67,12 +67,12 @@
 
 ```json
 // key: "murdic.pending"
-{ "req": "0B0F…", "createdAt": 1763540000.12 }
+{ "req": "0B0F…", "createdAt": 1763540000120 }
 // key: "murdic.result"
-{ "req": "0B0F…", "text": "내일 네 시에 만나요.", "finishedAt": 1763540007.80, "consumed": false }
+{ "req": "0B0F…", "text": "내일 네 시에 만나요.", "finishedAt": 1763540007800, "consumed": false }
 ```
 
-결과는 마지막 한 건만 둔다. 삽입 후 텍스트를 비운다. 키보드는 결과 텍스트를 로그에 남기지 않는다.
+시각은 모두 **밀리초**(JS `Date.now()`와 같은 단위). 결과는 마지막 한 건만 둔다. 삽입 후 텍스트를 비운다. 키보드는 결과 텍스트를 로그에 남기지 않는다.
 
 ## 4. 전체 접근 허용(Full Access)
 
