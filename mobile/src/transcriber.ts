@@ -29,10 +29,16 @@ export async function unload(): Promise<void> {
   await prev?.ctx.release();
 }
 
-const OPTIONS = {language: 'ko', maxThreads: 4, beamSize: 1} as const;
+// greedy. beamSize를 넘기면 whisper.rn이 빔 서치로 바꿔 에뮬레이터에서 3~5배 느려졌다(1이어도).
+const OPTIONS = {language: 'ko', maxThreads: 4} as const;
+
+/** "[음악]"·"[박수]" 같은 whisper의 대괄호 비음성 표기를 지운다(Android Cleanup.stripAnnotations와 같음). */
+export function stripAnnotations(raw: string): string {
+  return raw.replace(/\[[^\]]*\]/g, ' ').replace(/\s+/g, ' ').trim();
+}
 
 function finish(raw: string, t0: number): Result {
-  const text = raw.replace(/\s+/g, ' ').trim();
+  const text = stripAnnotations(raw);
   return {raw: text, text: clean(text), ms: Date.now() - t0};
 }
 

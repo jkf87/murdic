@@ -29,7 +29,7 @@ import {
   saveSettings,
   type ModelId,
 } from './src/models';
-import {Recorder} from './src/recorder';
+import {Recorder, SILENCE_LEVEL, speechLevel} from './src/recorder';
 import {load, transcribeFile, transcribePcm, type Result} from './src/transcriber';
 
 type Phase = 'idle' | 'loading' | 'recording' | 'transcribing';
@@ -199,6 +199,10 @@ function Main({dark}: {dark: boolean}) {
       const rec = await recorder.current.stop();
       if (rec.seconds < 0.3) {
         setError('너무 짧아요. 버튼을 누른 채로 말해 주세요.');
+        return;
+      }
+      if (speechLevel(rec.pcm) < SILENCE_LEVEL) {
+        setError('소리가 거의 들리지 않았어요. 마이크를 확인하고 다시 말해 주세요.');
         return;
       }
       const r = await transcribePcm(rec.pcm);

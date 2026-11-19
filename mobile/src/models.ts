@@ -23,13 +23,14 @@ export type ModelInfo = {
 };
 
 export const MODELS: ModelInfo[] = [
-  {id: 'base-q5_1', label: 'base (양자화)', bytes: 59707625, note: '가장 가볍고 빠름'},
-  {id: 'base', label: 'base', bytes: 147951465, note: '보급형 기기'},
-  {id: 'small-q5_1', label: 'small (양자화)', bytes: 190085487, note: '권장: 정확도와 속도 균형'},
+  {id: 'base-q5_1', label: 'base (양자화)', bytes: 59707625, note: '가장 가벼움'},
+  {id: 'base', label: 'base', bytes: 147951465, note: '권장: 빠르고 정확'},
+  {id: 'small-q5_1', label: 'small (양자화)', bytes: 190085487, note: 'small을 절반 메모리로, 대신 느림'},
   {id: 'small', label: 'small', bytes: 487601967, note: '가장 정확, 메모리 많이 씀'},
 ];
 
-export const DEFAULT_MODEL: ModelId = 'small-q5_1';
+// 실측(docs/mobile.md): fp16 지원 CPU에서 양자화가 더 느렸고 base가 가장 빠르면서 정확했다.
+export const DEFAULT_MODEL: ModelId = 'base';
 
 const MODEL_DIR = `${DocumentDirectoryPath}/models`;
 const SETTINGS = `${DocumentDirectoryPath}/murdic-settings.json`;
