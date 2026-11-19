@@ -2,8 +2,10 @@ import Foundation
 
 enum DictationError: LocalizedError {
     case message(String)
+    // The Whisper model could not be loaded or downloaded; the settings window offers a retry.
+    case model(String)
     var errorDescription: String? {
-        switch self { case .message(let text): return text }
+        switch self { case .message(let text), .model(let text): return text }
     }
 }
 
@@ -14,22 +16,45 @@ final class Engine {
     private let output = Pipe()
     private var buffer = Data()
 
-    func start(config: URL? = nil) throws {
+    // `progress` receives model download fractions (0...1) before the engine is ready.
+    func start(config: URL? = nil, refetch: Bool = false, progress: @escaping (Double) -> Void = { _ in }) throws {
         guard let resources = Bundle.main.resourceURL,
-              let python = Bundle.main.object(forInfoDictionaryKey: "DictatePython") as? String else {
+              let configured = Bundle.main.object(forInfoDictionaryKey: "DictatePython") as? String else {
             throw DictationError.message("앱 번들 또는 Python 설정을 찾을 수 없습니다.")
         }
-        process.executableURL = URL(fileURLWithPath: python)
+        // A relative path is the Python runtime inside this app bundle (release build).
+        // An absolute path is the development build's Python.
+        let bundled = !configured.hasPrefix("/")
+        process.executableURL = bundled ? Bundle.main.bundleURL.appendingPathComponent(configured) : URL(fileURLWithPath: configured)
         process.currentDirectoryURL = resources
-        process.arguments = ["-m", "dictate"] + (config.map { ["--config-dir", $0.path] } ?? []) + ["serve"]
+        var arguments = bundled ? ["-s"] : []
+        arguments += ["-m", "dictate"]
+        if let config { arguments += ["--config-dir", config.path] }
+        if refetch { arguments.append("--refetch-model") }
+        process.arguments = arguments + ["serve"]
         var env = ProcessInfo.processInfo.environment
+        if bundled {
+            // The bundled runtime must not pick up the user's Python variables or user site-packages.
+            env = env.filter { !$0.key.hasPrefix("PYTHON") }
+            env["PYTHONNOUSERSITE"] = "1"
+        }
         env["PYTHONDONTWRITEBYTECODE"] = "1"
         process.environment = env
         process.standardInput = input
         process.standardOutput = output
         try process.run()
-        guard try receive()["event"] as? String == "ready" else {
-            throw DictationError.message("엔진 시작에 실패했습니다.")
+        while true {
+            let reply = try receive()
+            switch reply["event"] as? String {
+            case "progress"?:
+                if let fraction = reply["fraction"] as? Double { progress(fraction) }
+            case "ready"?:
+                return
+            case "model_error"?:
+                throw DictationError.model(reply["message"] as? String ?? "음성 모델을 받지 못했습니다.")
+            default:
+                throw DictationError.message("엔진 시작에 실패했습니다.")
+            }
         }
     }
 

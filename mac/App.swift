@@ -34,6 +34,7 @@ final class App: NSObject, NSApplicationDelegate {
     private var testStop: DispatchWorkItem?
     private var target: NSRunningApplication?
     private var transaction: PasteTransaction?
+    private var refetchModel = false
     private let config = FileManager.default.homeDirectoryForCurrentUser
         .appendingPathComponent("Library/Application Support/murdic")
     private let temp = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
@@ -56,6 +57,7 @@ final class App: NSObject, NSApplicationDelegate {
         menu.addItem(inputItem)
         settings.selectInput = { [weak self] in self?.selectMicrophone($0) }
         settings.testInput = { [weak self] in self?.testMicrophone() }
+        settings.retryModel = { [weak self] in self?.retryModel() }
         settings.closed = { [weak self] in
             if self?.recorder?.isTest == true { self?.cancelRecording() }
         }
@@ -177,18 +179,42 @@ final class App: NSObject, NSApplicationDelegate {
         status.title = "모델 준비 중…"
         engine = Engine()
         let worker = engine
+        let refetch = refetchModel
+        refetchModel = false
         queue.async {
             do {
-                try worker.start()
+                try worker.start(refetch: refetch) { fraction in
+                    DispatchQueue.main.async { self.modelProgress(fraction) }
+                }
                 DispatchQueue.main.async {
+                    self.settings.modelReady()
                     self.ready()
                     let mic = AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
                     let ax = AXIsProcessTrusted()
                     Logger(subsystem: "local.murmur.dictate", category: "startup")
                         .notice("Engine ready. Microphone authorized: \(mic, privacy: .public). Accessibility trusted: \(ax, privacy: .public).")
                 }
-            } catch { DispatchQueue.main.async { self.report(error.localizedDescription) } }
+            } catch {
+                let message = error.localizedDescription
+                var modelProblem = false
+                if let failure = error as? DictationError, case .model = failure { modelProblem = true }
+                DispatchQueue.main.async {
+                    self.report(message)
+                    if modelProblem { self.settings.modelFailed() }
+                }
+            }
         }
+    }
+
+    private func modelProgress(_ fraction: Double) {
+        status.title = "음성 모델 받는 중… \(Int(fraction * 100))%"
+        settings.modelDownloading(fraction)
+    }
+
+    // "다시 받기" in the settings window: discard the murdic copy and download the model again.
+    @objc private func retryModel() {
+        refetchModel = true
+        restart()
     }
 
     private func ready() {
