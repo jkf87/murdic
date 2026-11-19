@@ -23,7 +23,7 @@ Java_com_murdic_mobile_ime_WhisperNative_init(JNIEnv *env, jclass, jstring jpath
 // UTF-8 바이트로 돌려준다(NewStringUTF는 깨진 UTF-8·4바이트 문자에서 크래시할 수 있음).
 extern "C" JNIEXPORT jbyteArray JNICALL
 Java_com_murdic_mobile_ime_WhisperNative_transcribe(JNIEnv *env, jclass, jlong handle, jfloatArray jaudio,
-                                                    jint threads) {
+                                                    jint threads, jstring jprompt) {
     auto *ctx = reinterpret_cast<whisper_context *>(handle);
     if (!ctx) {
         return env->NewByteArray(0);
@@ -39,9 +39,18 @@ Java_com_murdic_mobile_ime_WhisperNative_transcribe(JNIEnv *env, jclass, jlong h
     p.print_realtime = false;
     p.print_special = false;
     p.print_timestamps = false;
-    p.no_context = true;
     p.single_segment = false;
     p.suppress_blank = true;
+    // Murmur stt.py 디코딩 설정(docs/STT_TUNING.md 1절). whisper.cpp 기본값에 기대지 않고 명시한다.
+    p.temperature = 0.0f;       // temperature=0.0
+    p.temperature_inc = 0.0f;   // 폴백 없음(기본 0.2면 온도를 올려 다시 디코딩)
+    p.no_context = true;        // condition_on_previous_text=False
+    p.no_speech_thold = 0.6f;   // no_speech_threshold=0.6
+    p.logprob_thold = -1.0f;    // logprob_threshold=-1.0
+    // compression_ratio_threshold=1.8은 폴백할 온도가 없으면 결과에 영향이 없어 옮기지 않는다
+    // (docs/mobile.md "전사 튜닝 이식", entropy_thold도 폴백 판정에만 쓰임).
+    const char *prompt = jprompt ? env->GetStringUTFChars(jprompt, nullptr) : nullptr;
+    p.initial_prompt = (prompt && prompt[0]) ? prompt : nullptr;  // 도메인 힌트
 
     std::string out;
     if (whisper_full(ctx, p, audio, n) == 0) {
@@ -51,6 +60,7 @@ Java_com_murdic_mobile_ime_WhisperNative_transcribe(JNIEnv *env, jclass, jlong h
         }
     }
     env->ReleaseFloatArrayElements(jaudio, audio, JNI_ABORT);
+    if (prompt) env->ReleaseStringUTFChars(jprompt, prompt);
     jbyteArray bytes = env->NewByteArray((jsize) out.size());
     env->SetByteArrayRegion(bytes, 0, (jsize) out.size(), reinterpret_cast<const jbyte *>(out.data()));
     return bytes;

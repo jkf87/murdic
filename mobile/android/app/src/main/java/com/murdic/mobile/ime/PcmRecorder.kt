@@ -59,24 +59,6 @@ class PcmRecorder(private val onLevel: (Float) -> Unit) {
 
     companion object {
         const val RATE = 16000
-        /** 이보다 조용하면 말이 없다고 본다(0.1초 창 RMS의 최댓값). 앱 src/recorder.ts와 같은 값. */
-        const val SILENCE_LEVEL = 0.01f
-
-        /** 0.1초 창마다 RMS를 재서 가장 큰 값. 짧게 말해도 잡히고 잡음 한 점에는 덜 흔들린다. */
-        fun speechLevel(audio: FloatArray): Float {
-            val win = RATE / 10
-            var best = 0.0
-            var i = 0
-            while (i < audio.size) {
-                val end = minOf(audio.size, i + win)
-                var sum = 0.0
-                for (j in i until end) sum += audio[j] * audio[j]
-                best = maxOf(best, sqrt(sum / (end - i)))
-                i = end
-            }
-            return best.toFloat()
-        }
-
         fun pcm16ToFloat(bytes: ByteArray, offset: Int, length: Int): FloatArray {
             val bb = ByteBuffer.wrap(bytes, offset, length).order(ByteOrder.LITTLE_ENDIAN)
             val out = FloatArray(length / 2)

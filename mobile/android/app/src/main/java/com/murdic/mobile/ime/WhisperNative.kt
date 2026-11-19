@@ -35,9 +35,10 @@ object WhisperNative {
     }
 
     @JvmStatic external fun init(modelPath: String): Long
-    @JvmStatic private external fun transcribe(handle: Long, audio: FloatArray, threads: Int): ByteArray
+    @JvmStatic private external fun transcribe(handle: Long, audio: FloatArray, threads: Int, prompt: String?): ByteArray
     @JvmStatic external fun free(handle: Long)
 
-    fun transcribeText(handle: Long, audio: FloatArray, threads: Int = 0): String =
-        String(transcribe(handle, audio, threads), Charsets.UTF_8)
+    /** prompt = 도메인 힌트(initial_prompt), null이면 없음. 디코딩 설정은 cpp에 고정(Murmur와 같음). */
+    fun transcribeText(handle: Long, audio: FloatArray, prompt: String?, threads: Int = 0): String =
+        String(transcribe(handle, audio, threads, prompt), Charsets.UTF_8)
 }

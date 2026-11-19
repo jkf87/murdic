@@ -122,36 +122,43 @@ class MurdicImeService : InputMethodService() {
             status?.text = "너무 짧아요. 누른 채로 말해 주세요."
             return
         }
-        val level = PcmRecorder.speechLevel(audio)
-        Log.i(TAG, "recorded %.1fs level=%.4f".format(audio.size / PcmRecorder.RATE.toFloat(), level))
-        if (level < PcmRecorder.SILENCE_LEVEL) {
-            // 무음에 whisper가 "[음악]" 같은 환각을 내므로 전사하지 않는다.
-            status?.text = "소리가 거의 들리지 않았어요. 마이크를 확인하고 다시 말해 주세요."
-            return
-        }
         transcribeAndCommit(audio, "음성 %.1f초".format(audio.size / PcmRecorder.RATE.toFloat()))
     }
 
+    /**
+     * 맥판 backend.run과 같은 순서(docs/STT_TUNING.md): 말소리 창 0개면 전사하지 않음 → Whisper(힌트 프롬프트)
+     * → 대괄호 표기 제거 → filterTranscript(환각이면 '' = 입력 없음, 말소리 창 3개 이상이면 문구 규칙만 예외)
+     * → 용어 교정(filterTranscript 안) → cleanup → commitText.
+     */
     private fun transcribeAndCommit(audio: FloatArray, label: String) {
+        val windows = Postprocess.countSpeechWindows(audio)
+        Log.i(TAG, "recorded $label speechWindows=$windows")
+        if (windows == 0) {
+            status?.text = "소리가 거의 들리지 않았어요. 마이크를 확인하고 다시 말해 주세요."
+            return
+        }
         busy = true
         mic?.isEnabled = false
         status?.text = "받아 적는 중…"
         worker.execute {
             val result = runCatching {
+                val settings = readSettings()
                 val loadMs = ensureModel()
                 val t0 = SystemClock.elapsedRealtime()
-                val raw = Cleanup.stripAnnotations(WhisperNative.transcribeText(handle, audio))
-                val text = Cleanup.clean(raw)
+                val prompt = Postprocess.buildPrompt(settings.hintPreset, settings.properNouns)
+                val raw = Cleanup.stripAnnotations(WhisperNative.transcribeText(handle, audio, prompt))
+                val filtered = Postprocess.filterTranscript(raw, windows, settings.termCorrections)
+                val text = if (filtered.isEmpty()) "" else Cleanup.clean(filtered)
                 val ms = SystemClock.elapsedRealtime() - t0
-                Log.i(TAG, "transcribed model=$handleModel load=${loadMs}ms transcribe=${ms}ms $label raw=$raw text=$text")
-                Triple(text, ms, loadMs)
+                Log.i(TAG, "transcribed model=$handleModel load=${loadMs}ms transcribe=${ms}ms $label windows=$windows prompt=$prompt raw=$raw text=$text")
+                Triple(text, ms, raw)
             }
             main.post {
                 busy = false
                 mic?.isEnabled = true
-                result.onSuccess { (text, ms, _) ->
+                result.onSuccess { (text, ms, raw) ->
                     if (text.isEmpty()) {
-                        status?.text = "인식된 말이 없습니다"
+                        status?.text = if (raw.isEmpty()) "인식된 말이 없습니다" else "잡음으로 보고 넣지 않았어요 · 다시 말해 주세요"
                     } else {
                         commit(text)
                         status?.text = "입력함 · $label · ${ms} ms"
@@ -202,9 +209,30 @@ class MurdicImeService : InputMethodService() {
         return SystemClock.elapsedRealtime() - t0
     }
 
-    private fun selectedModel(): String = runCatching {
-        JSONObject(File(filesDir, "murdic-settings.json").readText()).getString("model")
-    }.getOrDefault(DEFAULT_MODEL)
+    /** 앱(src/models.ts Settings)과 같은 파일·같은 필드. 없거나 깨졌으면 기본값. */
+    private data class Settings(
+        val model: String = DEFAULT_MODEL,
+        val hintPreset: String = "none",
+        val properNouns: List<String> = emptyList(),
+        val termCorrections: List<Pair<String, String>> = emptyList(),
+    )
+
+    private fun readSettings(): Settings = runCatching {
+        val j = JSONObject(File(filesDir, "murdic-settings.json").readText())
+        val nouns = j.optJSONArray("properNouns")
+        val terms = j.optJSONArray("termCorrections")
+        Settings(
+            model = j.optString("model", DEFAULT_MODEL),
+            hintPreset = j.optString("hintPreset", "none"),
+            properNouns = List(nouns?.length() ?: 0) { nouns!!.optString(it) },
+            termCorrections = List(terms?.length() ?: 0) {
+                val pair = terms!!.optJSONArray(it)
+                (pair?.optString(0) ?: "") to (pair?.optString(1) ?: "")
+            }.filter { it.first.isNotEmpty() },
+        )
+    }.getOrDefault(Settings())
+
+    private fun selectedModel(): String = readSettings().model
 
     private fun modelPath(model: String) = File(filesDir, "models/ggml-$model.bin").absolutePath
 
@@ -239,7 +267,7 @@ class MurdicImeService : InputMethodService() {
 
     companion object {
         private const val TAG = "MurdicIme"
-        const val DEFAULT_MODEL = "base" // src/models.ts DEFAULT_MODEL과 같게
+        const val DEFAULT_MODEL = "small" // src/models.ts DEFAULT_MODEL과 같게(Murmur 기준 모델)
         const val DEBUG_ACTION = "com.murdic.mobile.DEBUG_TRANSCRIBE_FILE"
     }
 }
