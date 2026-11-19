@@ -60,10 +60,12 @@ Stop-Process -Id $app.Id -Force -ErrorAction SilentlyContinue
 Start-Sleep 2
 $p = Start-Process (Join-Path $App "unins000.exe") "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART" -PassThru -Wait
 $R.uninstall_exit = $p.ExitCode
-Start-Sleep 5
+# unins000.exe relaunches itself from %TEMP% and returns at once: wait for the real removal.
+$t = Get-Date
+while ((Test-Path (Join-Path $App "unins000.exe")) -and ((Get-Date) - $t).TotalSeconds -lt 120) { Start-Sleep -Milliseconds 500 }
 $R.app_removed = -not (Test-Path (Join-Path $App "murdic.exe"))
 $R.downloads_removed = -not (Test-Path (Join-Path $env:LOCALAPPDATA "murdic"))
-$R.settings_kept = Test-Path (Join-Path $env:APPDATA "murdic\settings.json")
+$R.settings_kept = Test-Path (Join-Path $env:APPDATA "murdic\hints.txt")
 $R.autostart_removed = -not (Get-ItemProperty HKCU:\Software\Microsoft\Windows\CurrentVersion\Run -Name murdic -ErrorAction SilentlyContinue)
 $R | ConvertTo-Json | Out-File "$Out\inner.json" -Encoding utf8
 '@
