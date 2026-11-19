@@ -106,27 +106,43 @@ def _mark_private():
     _set(cloud, (0).to_bytes(4, "little"))
 
 
+def _read_format(fmt):
+    handle = user32.GetClipboardData(fmt)
+    if not handle:
+        return None   # delayed rendering failed (source app quit, ...)
+    size = kernel32.GlobalSize(handle)
+    pointer = kernel32.GlobalLock(handle)
+    if not pointer:
+        return None
+    try:
+        return ctypes.string_at(pointer, size)
+    finally:
+        kernel32.GlobalUnlock(handle)
+
+
 def snapshot():
-    """Copy every global-memory clipboard format. Call with the clipboard open."""
+    """Copy every readable global-memory clipboard format. Call with the clipboard open.
+
+    Best effort, as in mac/Paste.swift: formats that cannot be read are skipped
+    and dictation continues; whatever was readable is restored after the paste."""
     private = set(_private_formats())
-    saved, fmt = [], 0
+    saved, fmt, skipped = [], 0, 0
     while True:
         fmt = user32.EnumClipboardFormats(fmt)
         if not fmt:
             break
         if fmt in HANDLE_FORMATS or 0x300 <= fmt <= 0x3FF or fmt in private:
             continue
-        handle = user32.GetClipboardData(fmt)
-        if not handle:
-            continue   # delayed rendering failed; Windows may still synthesise it
-        size = kernel32.GlobalSize(handle)
-        pointer = kernel32.GlobalLock(handle)
-        if not pointer:
-            continue
         try:
-            saved.append((fmt, ctypes.string_at(pointer, size)))
-        finally:
-            kernel32.GlobalUnlock(handle)
+            data = _read_format(fmt)
+        except Exception:   # never let one odd format stop dictation
+            data = None
+        if data is None:
+            skipped += 1
+        else:
+            saved.append((fmt, data))
+    if skipped:
+        log.info("Clipboard: skipped %d unreadable format(s), kept %d", skipped, len(saved))
     return saved
 
 
@@ -154,7 +170,11 @@ def write_text(text, private=False):
 class PasteTransaction:
     def __init__(self, text):
         with _Open():
-            self.saved = snapshot()
+            try:
+                self.saved = snapshot()
+            except Exception:
+                log.exception("Clipboard could not be saved; pasting without restore data")
+                self.saved = []
             user32.EmptyClipboard()
             if not _set(CF_UNICODETEXT, (text + "\0").encode("utf-16-le")):
                 self._restore_open()

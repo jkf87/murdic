@@ -149,6 +149,20 @@ class ClipboardTests(unittest.TestCase):
             if original is not None:
                 paste.write_text(original)
 
+    def test_unreadable_format_is_skipped_and_paste_continues(self):
+        # A delayed-rendering format whose owner never renders it reads as NULL,
+        # like data promised by an app that has quit.
+        promised = paste.user32.RegisterClipboardFormatW("murdic-test-promised")
+        with paste._Open():
+            paste.user32.EmptyClipboard()
+            paste._set(paste.CF_UNICODETEXT, "남겨 둘 텍스트\0".encode("utf-16-le"))
+            paste.user32.SetClipboardData(promised, None)
+        transaction = paste.PasteTransaction("받아쓴 문장.")
+        self.assertEqual(paste.read_text(), "받아쓴 문장.")
+        self.assertNotIn(promised, [fmt for fmt, _ in transaction.saved])
+        self.assertTrue(transaction.restore())
+        self.assertEqual(paste.read_text(), "남겨 둘 텍스트")
+
     def test_empty_clipboard_restores_empty(self):
         with paste._Open():
             paste.user32.EmptyClipboard()
