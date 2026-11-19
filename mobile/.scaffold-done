@@ -1,0 +1,4 @@
+scaffold done 2026-11-19 (ANDROID)
+RN 0.84.1 · jest 38/38 · tsc OK · Android assembleDebug OK (arm64)
+mobile/ios/는 템플릿 그대로, pod install 안 함. 이후 mobile/ios/는 IOS 작업자 담당.
+JS 쪽 iOS 연결: docs/tasks/REQUESTS.md 회신 참고.
