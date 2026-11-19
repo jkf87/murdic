@@ -232,8 +232,15 @@
       <section id="install" class="section">
         <div class="install">
           <h2>Install on your Mac</h2>
+          <div class="downloads">
+            <a class="primary" href="https://github.com/jkf87/murdic/releases/latest/download/murdic-arm64.dmg">Download for macOS (DMG)</a>
+            <a class="primary" href="https://github.com/jkf87/murdic/releases/latest/download/murdic-setup.exe">Download for Windows</a>
+          </div>
           <p class="desc">
-            Tested on Apple Silicon with macOS 26.5. Set up the developer tools
+            Open the DMG and drag murdic.app to Applications. It needs an Apple Silicon Mac running macOS 14 or later. We tested on macOS 26.5. The app is not notarized, so on first launch open System Settings → Privacy &amp; Security and choose "Open Anyway". The first run downloads the speech model (about 481 MB).
+          </p>
+          <p class="desc">
+            To install the development build from source, use the commands below. Tested on Apple Silicon with macOS 26.5. Set up the developer tools
             with <code>xcode-select --install</code> and
             <code>brew install python</code>. These commands install murdic and
             the Murmur core.
