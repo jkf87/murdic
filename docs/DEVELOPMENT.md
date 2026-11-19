@@ -1,5 +1,7 @@
 # murdic development notes
 
+For the Windows CPU backend, tray application, and test commands, see [Windows development and usage](WINDOWS.md). The instructions below describe the original Mac application.
+
 The Swift menu app sends a WAV path over JSON-lines to a resident Python worker. It imports Murmur's voice detector and Whisper wrapper and transcribes the complete recording on release. Both the GUI and CLI use `dictate/backend.py`. Tests for cleanup examples are in `tests/test_cleanup.py`.
 
 ## Test from the repository root
