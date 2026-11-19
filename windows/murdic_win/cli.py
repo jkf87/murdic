@@ -50,12 +50,43 @@ def main(argv=None):
     wav.add_argument("--json", action="store_true")
     wav.add_argument("--repeat", type=int, default=1)
     modes.add_parser("devices", help="입력 장치 목록(JSON)")
+    mic = modes.add_parser("mic-test", help="장치별로 0.5초 녹음해 성공/실패·레벨·예외 전문 출력")
+    mic.add_argument("--device", dest="mic_name", help="이름에 이 문자열이 든 장치만 (예: MV7)")
+    mic.add_argument("--seconds", type=float, default=0.5)
+    mic.add_argument("--json", action="store_true")
     bench = modes.add_parser("benchmark", help="WAV → 전사 → 메모장 붙여넣기 지연 측정")
     bench.add_argument("path", type=Path)
     bench.add_argument("--runs", type=int, default=5)
     args = parser.parse_args(argv)
     directory = args.config_dir or paths.config_dir()
-    setup_logging(directory, console=args.mode is not None)
+    setup_logging(directory, console=args.mode not in (None, "mic-test"))
+    from .diagnostics import log_environment
+    log_environment()
+
+    if args.mode == "mic-test":
+        from .diagnostics import environment, mic_test
+        info = environment()
+        results = mic_test(args.mic_name, args.seconds)
+        if args.json:
+            print(json.dumps(dict(environment=info, results=results), ensure_ascii=False, indent=2))
+        else:
+            print(f"murdic {info['murdic']} · Windows build {info['windows_build']} · Python {info['python']}"
+                  f" · sounddevice {info.get('sounddevice')} · {info.get('portaudio')}")
+            for device in info.get("portaudio_inputs", []):
+                print(f"  [{device['hostapi']}] #{device['index']} {device['name']}"
+                      f" · {device['default_samplerate']:.0f} Hz · {device['channels']}ch")
+            if not results:
+                print("녹음할 입력 장치가 없습니다." + (f" (--device {args.mic_name})" if args.mic_name else ""))
+            for row in results:
+                mark = "성공" if row["ok"] else "실패"
+                print(f"\n[{mark}] {row['name']}{' (기본)' if row['default'] else ''}")
+                print(f"  백엔드: {row.get('backend')}")
+                if row["ok"]:
+                    print(f"  {row['seconds']} s, {row['samples']} samples @16 kHz,"
+                          f" peak {row['peak']}, max block {row['max_block_dbfs']} dBFS")
+                else:
+                    print(f"  오류: {row['error']}\n{row['traceback']}")
+        return 0 if results and all(r["ok"] for r in results) else 1
 
     if args.mode == "wav":
         from .engine import Engine, Pipeline

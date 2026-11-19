@@ -6,6 +6,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from . import download
+from .errors import describe
 
 log = logging.getLogger("murdic.firstrun")
 FONT = "Malgun Gothic"
@@ -83,8 +84,8 @@ class FirstRun:
         except download.Cancelled:
             pass
         except Exception as error:
-            log.warning("Download failed: %s", error)
-            self.app.post(self.failed, str(error))
+            log.warning("Download failed: %s", describe(error), exc_info=True)
+            self.app.post(self.failed, describe(error))
 
     def progress(self, done, total):
         self.bar.configure(value=done * 1000 // max(total, 1))

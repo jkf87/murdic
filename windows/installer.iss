@@ -1,11 +1,11 @@
 ﻿; Inno Setup 6 script for murdic (Windows). Built by windows\build.ps1:
-;   ISCC.exe /DAppVersion=0.1.0 windows\installer.iss
+;   ISCC.exe /DAppVersion=0.3.1 windows\installer.iss
 ; One per-user installer (no administrator rights) into %LOCALAPPDATA%\Programs\murdic.
 ; It contains the Python runtime; the Whisper model (and cuBLAS on NVIDIA PCs)
 ; is downloaded with progress on first run into %LOCALAPPDATA%\murdic.
 
 #ifndef AppVersion
-  #define AppVersion "0.1.0"
+  #define AppVersion "0.3.1"
 #endif
 
 [Setup]

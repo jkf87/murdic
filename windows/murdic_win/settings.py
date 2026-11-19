@@ -20,7 +20,7 @@ class Settings:
         except FileNotFoundError:
             pass
         except (OSError, ValueError) as error:
-            log.warning("Ignoring unreadable settings: %s", error)
+            log.warning("Ignoring unreadable settings: %s (%s)", error, type(error).__name__, exc_info=True)
 
     def get(self, key, default=None):
         with self._lock:

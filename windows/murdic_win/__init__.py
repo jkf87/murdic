@@ -2,7 +2,7 @@
 import sys
 from pathlib import Path
 
-__version__ = "0.1.0"
+__version__ = "0.3.1"
 
 # The shared cleanup rules live in the repository's `dictate` package. A frozen
 # build bundles it; a source checkout imports it from the repository root.

@@ -16,6 +16,7 @@ from concurrent.futures import ThreadPoolExecutor
 from . import paste, paths
 from .audio import Capture, DeviceWatcher, MicrophoneSelection
 from .engine import QUIET_DB, Engine, Pipeline
+from .errors import describe
 from .hotkey import DEFAULT_HOTKEY, HOTKEYS, KeyboardHook
 from .postprocess import HINT_PRESETS
 from .settings import Settings
@@ -160,7 +161,7 @@ class App:
                 self.post(self.engine_loaded, pipeline)
             except Exception as error:
                 log.exception("Engine failed")
-                self.post(self.report, str(error))
+                self.post(self.report, describe(error))
         threading.Thread(target=load, name="murdic-load", daemon=True).start()
 
     def engine_loaded(self, pipeline):
@@ -229,7 +230,7 @@ class App:
         try:
             _, db = capture.stop()
         except Exception as error:
-            self.notify(str(error))
+            self.notify(describe(error))
             return
         message = self.quiet_message(capture) if db < QUIET_DB else "입력 확인 · " + capture.microphone.name
         self.notify(message)
@@ -244,7 +245,7 @@ class App:
         if capture is None:
             return
         self.cancel_take()
-        self.notify(f"{capture.microphone.name}: {error}")
+        self.notify(describe(error, capture.microphone.name))
 
     # --- hotkey flow --------------------------------------------------------
     def on_key(self, action, when):
@@ -317,7 +318,7 @@ class App:
             audio, db = capture.stop()
         except Exception as error:
             self.ready()
-            self.notify(f"{capture.microphone.name}: {error}")
+            self.notify(describe(error, capture.microphone.name))
             return
         if db < QUIET_DB:
             self.ready()
@@ -331,7 +332,7 @@ class App:
             result = future.result()
         except Exception as error:
             log.exception("Transcription failed")
-            self.report(f"전사 오류: {error}. 메뉴에서 엔진을 다시 시작하세요.")
+            self.report(describe(error, "전사 오류") + " — 메뉴에서 엔진을 다시 시작하세요.")
             return
         log.info("Transcribed %.2f s in %.0f ms on %s (%s)", result["audio_s"], result["processing_ms"],
                  result["device"], result["route"])
@@ -354,7 +355,7 @@ class App:
                 self.transaction = None
             self.overlay.hide()
             self.ready()
-            self.notify(str(error))
+            self.notify(describe(error, "붙여넣기 오류"))
             return
         elapsed = round((time.perf_counter() - released) * 1000)
         log.info("Ctrl+V sent %d ms after key release (%d chars)", elapsed, len(text))
@@ -437,5 +438,5 @@ def run_app(directory, device="auto"):
         return App(directory, device).run()
     except Exception as error:
         log.exception("murdic failed to start")
-        message_box(f"머딕을 시작할 수 없습니다: {error}")
+        message_box(describe(error, "머딕을 시작할 수 없습니다"))
         return 1

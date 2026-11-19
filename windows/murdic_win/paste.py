@@ -53,7 +53,7 @@ for name, args, res in [
 
 
 class PasteError(RuntimeError):
-    pass
+    user_facing = True
 
 
 _owner = None

@@ -2,6 +2,7 @@
 faster-whisper==1.2.1
 ctranslate2==4.9.0
 numpy==2.5.5
-SoundCard==0.4.6
+SoundCard==0.4.6        # device list, default device, hot-plug, loopback test mode
+sounddevice==0.5.6      # recording (PortAudio WASAPI shared mode, MME fallback)
 pystray==0.19.5
 pillow==13.0.0

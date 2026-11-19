@@ -15,6 +15,7 @@ import zipfile
 from pathlib import Path
 
 from . import __version__
+from .errors import describe
 
 log = logging.getLogger("murdic.download")
 USER_AGENT = f"murdic/{__version__} (Windows)"
@@ -40,7 +41,7 @@ class Cancelled(Exception):
 
 
 class DownloadError(RuntimeError):
-    pass
+    user_facing = True
 
 
 def data_dir():
@@ -91,7 +92,7 @@ def fetch(url, dest, size, sha256, progress=None, cancel=None, offset=0, total=N
         try:
             response = urllib.request.urlopen(request, timeout=30)
         except OSError as error:
-            raise DownloadError(f"내려받기 실패: {error}") from error
+            raise DownloadError(describe(error, "내려받기 실패")) from error
         with response:
             if have and response.status != 206:   # server ignored Range: start over
                 have, digest = 0, hashlib.sha256()
@@ -106,7 +107,7 @@ def fetch(url, dest, size, sha256, progress=None, cancel=None, offset=0, total=N
                     try:
                         block = response.read(CHUNK)
                     except OSError as error:
-                        raise DownloadError(f"내려받기가 끊겼습니다: {error}") from error
+                        raise DownloadError(describe(error, "내려받기가 끊겼습니다")) from error
                     if not block:
                         break
                     out.write(block)

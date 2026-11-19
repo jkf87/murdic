@@ -4,6 +4,8 @@ import sys
 import tempfile
 import unittest
 
+import numpy as np
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from murdic_win import audio, hotkey, paste  # noqa: E402
@@ -117,7 +119,30 @@ class SelectionTests(unittest.TestCase):
 class AudioTests(unittest.TestCase):
     def test_error_messages(self):
         self.assertIn("개인 정보", audio.explain(RuntimeError("Error 0x80070005")))
-        self.assertEqual(audio.explain(RuntimeError("Error 0x88890004")), "마이크 연결이 끊겼습니다.")
+        self.assertEqual(audio.explain(RuntimeError("Error 0x88890004")),
+                         "마이크 연결이 끊겼습니다. [Error 0x88890004 (RuntimeError)]")
+        # Shure MV7+ via SoundCard raised a bare AssertionError: never show an empty message.
+        self.assertEqual(audio.explain(AssertionError()), "마이크 오류: AssertionError")
+        self.assertIn("개인 정보", audio.explain(OSError("Unanticipated host error [Windows WASAPI error -2147024891]")))
+
+    def test_portaudio_matching(self):
+        mic = Microphone("{x}", "마이크(2- Shure MV7+)")
+        inputs = [(3, dict(name="스피커 루프백")), (18, dict(name="마이크(2- Shure MV7+)")),
+                  (19, dict(name="마이크(2- Shure MV7+)"))]
+        self.assertEqual(audio.match_portaudio(mic, inputs)[0], 18)
+        self.assertEqual(audio.match_portaudio(mic, inputs, same_name_rank=1)[0], 19)
+        self.assertEqual(audio.match_portaudio(mic, inputs, same_name_rank=5)[0], 19)
+        mme = [(1, dict(name="마이크(2- Shure MV7"))]          # MME truncates long names
+        self.assertEqual(audio.match_portaudio(mic, mme)[0], 1)
+        self.assertIsNone(audio.match_portaudio(Microphone("{y}", "USB Mic"), inputs))
+
+    def test_capture_resamples_device_rate_to_16k(self):
+        capture = audio.Capture(Microphone("{x}", "t"), test=False)
+        capture.rate = 48000
+        capture._chunks = [np.ones(4800, np.float32) * 0.5, np.ones(4800, np.float32) * 0.5]
+        samples, _ = capture.stop()
+        self.assertEqual(len(samples), 3200)
+        self.assertAlmostEqual(float(samples.mean()), 0.5, places=5)
 
     def test_watcher_reports_changes_only(self):
         snapshots = iter([InputDevices(), InputDevices(), InputDevices((Microphone("x", "X"),), "x")])

@@ -20,6 +20,7 @@ import numpy as np
 from dictate.cleanup import clean
 
 from . import paths
+from .errors import describe
 from .postprocess import build_prompt, filter_transcript, parse_terms, speech_windows
 
 # Murmur's decoding settings (core/src/murmur/stt.py, docs/STT_TUNING.md §1).
@@ -37,7 +38,7 @@ log = logging.getLogger("murdic.engine")
 
 
 class EngineError(RuntimeError):
-    pass
+    user_facing = True
 
 
 def add_cuda_dll_dirs():
@@ -169,8 +170,8 @@ class Engine:
                 log.info("Whisper small ready on %s/%s in %d ms", dev, compute, self.load_ms)
                 return
             except Exception as error:  # e.g. cuBLAS present but the driver is too old
-                errors.append(f"{dev}: {error}")
-                log.warning("Could not use %s: %s", dev, error)
+                errors.append(describe(error, dev))
+                log.warning("Could not use %s: %s", dev, describe(error), exc_info=True)
         raise EngineError("Whisper 모델을 불러올 수 없습니다. " + "; ".join(errors))
 
     @property
@@ -251,7 +252,7 @@ def optional_hook(text, directory):
                                 check=True, timeout=4, creationflags=subprocess.CREATE_NO_WINDOW)
         return result.stdout.strip() or text
     except (OSError, ValueError, subprocess.SubprocessError):
-        log.warning("LLM hook unavailable; using local text")
+        log.warning("LLM hook unavailable; using local text", exc_info=True)
         return text
 
 
