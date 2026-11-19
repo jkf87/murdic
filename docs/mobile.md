@@ -119,3 +119,21 @@ IME 경로(`android-bench.sh`, 전사→정리→`commitText`, 3회, 모델은 �
 ### iOS 실측
 
 아직 없다(Xcode 설치 후 시뮬레이터에서 base·small 모델 로드 시간, 5초 한국어 전사 지연, 메모리 최고치를 잰다). 시뮬레이터는 맥 CPU/GPU를 써서 실기기와 다르다.
+
+## 전사 튜닝 이식 (`docs/STT_TUNING.md`, IOS 작업자, 2026-11-19)
+
+RN은 두 플랫폼이 JS를 같이 쓰므로 `mobile/src/postprocess.ts` 하나로 Android·iOS 모두 적용된다(연결은 `docs/tasks/REQUESTS.md` 요청 참고).
+
+| 원본(Murmur, mlx_whisper) | whisper.rn 0.7.4 (= whisper.cpp, iOS·Android 같은 JSI 코드) | 결과 |
+| --- | --- | --- |
+| `temperature=0.0` 단일 | `temperature: 0`, **`temperatureInc: 0`** | whisper.cpp 기본 `temperature_inc`가 0.2라 꼭 넘겨야 폴백이 꺼진다 |
+| `condition_on_previous_text=False` | JSI가 항상 `no_context = true` | 같음(옵션 없음) |
+| `no_speech_threshold=0.6`, `logprob_threshold=-1.0` | JS 옵션 없음, whisper.cpp 기본값 0.6 / -1.0 | 같음. "무음 확률 > 0.6 이고 평균 logprob < -1.0이면 건너뜀" 판정도 같다(whisper.cpp `is_no_speech`) |
+| `compression_ratio_threshold=1.8` | 대응 없음(`entropy_thold` 2.4 기본) | **근사하지 않는다.** mlx_whisper `decode_with_fallback`에서 이 값은 다음 온도로 다시 디코딩할지만 정한다. 온도가 0.0 하나라 결과에 영향이 없다. whisper.cpp `entropy_thold`도 폴백 판정에만 쓰여 `temperatureInc: 0`이면 마찬가지 |
+| `initial_prompt` | `prompt` | `buildPrompt(프리셋, 사용자 고유명사)` |
+
+- 환각 필터·용어 교정: `postprocess.py` 1:1 이식. 파이썬 의미 맞춤 — 길이·인덱스는 코드포인트, `strip()`/`split()`은 파이썬 공백 집합, 정규식 문자 클래스 동일.
+- 맥판 예외(main `dictate/backend.py filter_transcript`): 환각 판정이어도 **결과가 환각 문구 하나뿐이고 0.3초 말소리 창이 3개 이상**이면 살린다("감사합니다" 받아쓰기). 맥판은 webrtcvad가 설치돼 있지 않아 Murmur VAD의 **RMS 경로**(창 RMS ≥ 0.005, int16/32768)를 실제로 쓴다 — 모바일 `countSpeechWindows`도 같은 식.
+- 테스트: `mobile/scripts/gen_postprocess_cases.py`가 원본 코드(Murmur `postprocess.py`·`vad.py` + 맥판 main `filter_transcript`)로 `shared/postprocess_cases.json`(환각 58·용어 14·필터 20·말소리 창 14)을 만들고 `__tests__/postprocess.test.ts`가 대조 — 114개 통과. 일부러 틀린 구현(UTF-16 길이, 창 기준 2)은 각각 실패하는 것 확인.
+- 알려진 차이: 말소리 창 RMS는 원본이 float32, JS가 float64로 계산한다. 경계(0.005)에 아주 가까운 창에서만 갈릴 수 있다(예문은 경계 ±3%까지 일치).
+- iOS 키보드: 앱이 환각으로 버린 경우 `writeResult(req, '')` → 키보드는 아무것도 넣지 않고 "인식된 말이 없어요" 표시.
