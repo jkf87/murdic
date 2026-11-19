@@ -4,7 +4,7 @@ APP := $(DEST)/murdic.app
 BIN := $(APP)/Contents/MacOS/murdic
 SOURCES := $(wildcard mac/*.swift) $(wildcard dictate/*.py)
 
-.PHONY: all run install test benchmark sample
+.PHONY: all run install test benchmark sample dmg
 all: install
 
 $(BIN): $(SOURCES) mac/Info.plist Makefile scripts/build-app.py scripts/sign-local build/murdic.icns
@@ -34,3 +34,7 @@ test: sample build/microphone-tests
 
 benchmark: all sample
 	"$(BIN)" --benchmark "$(CURDIR)/build/sample.wav"
+
+# Release: self-contained murdic.app and build/release/murdic-<version>-arm64.dmg. See docs/RELEASE.md.
+dmg: build/murdic.icns
+	python3 scripts/build-release.py
