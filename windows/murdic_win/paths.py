@@ -27,8 +27,12 @@ def resource_dir():
 
 
 def bundled_model():
-    path = resource_dir() / "models" / MODEL_NAME
-    return path if (path / "model.bin").exists() else None
+    """A complete model next to the app (custom builds) or downloaded on first run."""
+    from .download import model_dir, model_ready
+    for path in (resource_dir() / "models" / MODEL_NAME, model_dir()):
+        if model_ready(path):
+            return path
+    return None
 
 
 def icon_png():
@@ -39,9 +43,10 @@ def icon_png():
 
 
 def cuda_dirs():
-    """Folders that may hold cuBLAS/cuDNN DLLs: the installer's optional GPU
-    component ({app}\\cuda) or the NVIDIA pip wheels of a development venv."""
-    found = [app_dir() / "cuda"]
+    """Folders that may hold cuBLAS DLLs: downloaded on first run
+    (%LOCALAPPDATA%\\murdic\\cuda), next to the app, or a development venv's NVIDIA wheels."""
+    from .download import cuda_dir
+    found = [cuda_dir(), app_dir() / "cuda"]
     if not FROZEN:
         pattern = os.path.join(sys.prefix, "Lib", "site-packages", "nvidia", "*", "bin")
         found += [Path(p) for p in sorted(glob.glob(pattern))]

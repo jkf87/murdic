@@ -27,6 +27,15 @@ def setup_logging(directory, console):
         pass
 
 
+def console_progress(done, total, _last=[None]):
+    percent = done * 100 // max(total, 1)
+    if sys.stderr and percent != _last[0]:
+        _last[0] = percent
+        end = "\n" if done >= total else ""
+        sys.stderr.write(f"\r모델 내려받는 중… {percent:3d}%  {done >> 20} / {total >> 20} MB{end}")
+        sys.stderr.flush()
+
+
 def main(argv=None):
     for stream in (sys.stdout, sys.stderr):
         if stream is not None and hasattr(stream, "reconfigure"):
@@ -49,8 +58,8 @@ def main(argv=None):
     setup_logging(directory, console=args.mode is not None)
 
     if args.mode == "wav":
-        from .engine import Pipeline
-        pipeline = Pipeline(directory, device=args.device)
+        from .engine import Engine, Pipeline
+        pipeline = Pipeline(directory, Engine(device=args.device, progress=console_progress))
         warmup = round((time.perf_counter() - STARTED) * 1000, 1)
         for _ in range(args.repeat):
             result = pipeline.run(args.path)

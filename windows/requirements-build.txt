@@ -1,4 +1,4 @@
 -r requirements.txt
 pyinstaller==6.22.3
-# Optional GPU component of the installer (cuBLAS only; cuDNN is not needed, see docs/windows-engine.md)
-nvidia-cublas-cu12==12.9.2.10
+# GPU in a development checkout (optional): pip install nvidia-cublas-cu12==12.9.2.10
+# The installed app downloads the same wheel's DLLs on first run (download.py). cuDNN is not needed.

@@ -102,7 +102,7 @@ class App:
             return 1
         self.watcher.start()
         self.tray.start()
-        self.load_engine()
+        self.prepare()
         self.root.after(15, self._pump)
         self.root.mainloop()
         return 0
@@ -125,6 +125,31 @@ class App:
         return self.state in ("ready", "failed")
 
     # --- engine -------------------------------------------------------------
+    @property
+    def gpu_available_to_download(self):
+        from . import download
+        return (paths.FROZEN and self.device != "cpu" and download.nvidia_driver_present()
+                and not download.cublas_ready())
+
+    def prepare(self):
+        """First run of the installed app: fetch the model (and cuBLAS on NVIDIA PCs)."""
+        from .firstrun import FirstRun
+        need_model = paths.FROZEN and paths.bundled_model() is None
+        want_gpu = self.gpu_available_to_download and self.settings.get("gpu_download") != "skipped"
+        if need_model or want_gpu:
+            self.state = "loading"
+            self.set_status("처음 실행 준비 중…")
+            FirstRun(self, need_model, want_gpu, lambda installed: self.load_engine())
+        else:
+            self.load_engine()
+
+    def download_gpu(self):
+        from .firstrun import FirstRun
+        if not self.can_restart or not self.gpu_available_to_download:
+            return
+        self.settings.update(gpu_download=None)
+        FirstRun(self, False, True, lambda installed: self.restart_engine() if installed else self.ready())
+
     def load_engine(self):
         self.state = "loading"
         self.set_status("모델 준비 중…")

@@ -77,10 +77,14 @@ def physical_cores():
     return max(2, min(8, (os.cpu_count() or 4) // 2))
 
 
-def resolve_model():
-    bundled = paths.bundled_model()
-    if bundled:
-        return str(bundled)
+def resolve_model(progress=None):
+    found = paths.bundled_model()
+    if found:
+        return str(found)
+    if paths.FROZEN:   # installed app: pinned, checksummed download to %LOCALAPPDATA%
+        from .download import download_model as fetch_model
+        log.info("Downloading Whisper small (about 486 MB)")
+        return str(fetch_model(progress))
     from faster_whisper.utils import download_model
     try:
         return download_model("small", local_files_only=True)
@@ -135,13 +139,13 @@ def level_db(samples):
 class Engine:
     """Loads Whisper once; `transcribe` is called from one worker thread at a time."""
 
-    def __init__(self, device="auto", model_path=None, cpu_threads=None):
+    def __init__(self, device="auto", model_path=None, cpu_threads=None, progress=None):
         add_cuda_dll_dirs()
         from faster_whisper import WhisperModel
         from faster_whisper.tokenizer import Tokenizer
         from faster_whisper.transcribe import get_suppressed_tokens
 
-        path = model_path or resolve_model()
+        path = model_path or resolve_model(progress)
         candidates = []
         if device in ("auto", "cuda") and cuda_ready():
             candidates.append(("cuda", "float16"))

@@ -1,20 +1,17 @@
 # PyInstaller spec: onedir build with two executables sharing one runtime.
 #   murdic.exe      tray app (no console)
 #   murdic-cli.exe  console: `wav`, `devices`, `benchmark`
-# Run through windows\build.ps1, which prepares build\murdic.ico and the model folder.
+# Run through windows\build.ps1, which prepares build\murdic.ico.
+# The Whisper model is not bundled: the app downloads it on first run (download.py).
 from pathlib import Path
 
 from PyInstaller.utils.hooks import collect_data_files, collect_dynamic_libs
 
 windows = Path(SPECPATH)
 repo = windows.parent
-model = repo / "build" / "models" / "faster-whisper-small"
-if not (model / "model.bin").exists():
-    raise SystemExit(f"Model not prepared: {model} (run windows\\build.ps1)")
 
 datas = (collect_data_files("faster_whisper") + collect_data_files("soundcard")
          + [(str(repo / "mac" / "assets" / "murdic.png"), "assets"),
-            (str(model), "models/faster-whisper-small"),
             (str(repo / "LICENSE"), ".")])
 binaries = collect_dynamic_libs("ctranslate2")
 

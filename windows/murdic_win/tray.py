@@ -72,6 +72,8 @@ class Tray:
         if paths.FROZEN:
             items.append(Item("Windows 시작 시 실행", self._post(app.toggle_autostart),
                               checked=lambda _: app.autostart))
+        if app.gpu_available_to_download:
+            items.append(Item("GPU 가속 받기 (약 553 MB)", self._post(app.download_gpu), enabled=app.can_restart))
         items += [Item("엔진 다시 시작", self._post(app.restart_engine), enabled=app.can_restart),
                   Item("종료", self._post(app.quit))]
         return items
