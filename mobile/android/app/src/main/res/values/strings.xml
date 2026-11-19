@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">머딕</string>
+    <string name="ime_name">머딕 받아쓰기</string>
+    <string name="ime_subtype">한국어 받아쓰기</string>
+</resources>

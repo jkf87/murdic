@@ -1,0 +1,28 @@
+// 머딕 IME 전용 whisper.cpp JNI 라이브러리.
+// whisper.rn의 .so는 JSI 전용이고 심볼을 숨겨 IME(Kotlin 서비스)에서 부를 수 없어서,
+// 같은 node_modules/whisper.rn/cpp 소스로 따로 빌드한다. Kotlin 쪽은 app의 ime/WhisperNative.kt.
+apply plugin: "com.android.library"
+
+def archs = (findProperty("reactNativeArchitectures") ?: "arm64-v8a,x86_64").split(",").collect { it.trim() }
+
+android {
+    namespace "com.murdic.mobile.imewhisper"
+    compileSdk rootProject.ext.compileSdkVersion
+    ndkVersion rootProject.ext.ndkVersion
+
+    defaultConfig {
+        minSdkVersion rootProject.ext.minSdkVersion
+        externalNativeBuild {
+            cmake {
+                abiFilters(*archs)
+                arguments "-DANDROID_STL=c++_static"
+            }
+        }
+    }
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+            version "3.22.1"
+        }
+    }
+}
