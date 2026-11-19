@@ -70,7 +70,7 @@ python3 scripts/verify-release.py <murdic.app> build/sample.wav [--fresh-home]
 ```
 
 - **otool**: 모든 Mach-O의 링크 라이브러리와 LC_RPATH가 `/usr/lib`, `/System`, 또는 `@` 상대 경로인지 확인합니다. 설치 이름(LC_ID)도 같은 기준입니다.
-- **strings**: 모든 파일을 `strings -a`로 훑어 `/opt/homebrew`, `/Users/conanssam-m4`, `~/.murmur`, 사용자 site-packages(`Library/Python/3`), 저장소 경로(`murmur-dictate`)를 찾습니다. 일반 상수(`/tmp`, `/usr/local`, CI 디버그 경로)는 개수만 보고합니다.
+- **strings**: 모든 파일을 `strings -a`로 훑어 `/opt/homebrew`, 빌드한 사람의 홈 경로(`$HOME`), `~/.murmur`, 사용자 site-packages(`Library/Python/3`), 저장소 경로(`murmur-dictate`)를 찾습니다. 일반 상수(`/tmp`, `/usr/local`, CI 디버그 경로)는 개수만 보고합니다.
 - **실행 시**: `env -i PATH=/usr/bin:/bin`, `python -s`, 작업 디렉터리 `Contents/Resources`로 실행해서 `sys.path`와 로드된 모든 모듈 파일이 번들 안인지 확인합니다.
 - **엔진**: 메뉴 앱과 같은 JSON 라인 `serve` 프로토콜로 `build/sample.wav`를 전사합니다. `--fresh-home`은 HOME과 HF_HOME을 빈 폴더로 바꿔 모델을 처음부터 받게 합니다.
 

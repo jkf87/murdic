@@ -22,7 +22,7 @@ MACHO_MAGIC = {b"\xcf\xfa\xed\xfe", b"\xca\xfe\xba\xbe", b"\xbe\xba\xfe\xca"}
 TEXT_SUFFIXES = {".py", ".txt", ".plist", ".json", ".cfg", ".pth", ".toml", ".md", ".sh", ".pyi", ".ini"}
 ALLOWED_LINK_PREFIXES = ("/usr/lib", "/System/Library/", "@rpath/", "@loader_path/", "@executable_path/")
 # Failing patterns: Homebrew, the developer's home and checkout, Murmur's home checkout, the user's site-packages.
-FORBIDDEN = [b"/opt/homebrew", b"/Users/conanssam-m4", b"/.murmur/", b"Library/Python/3", b"murmur-dictate"]
+FORBIDDEN = [b"/opt/homebrew", str(Path.home()).encode(), b"/.murmur/", b"Library/Python/3", b"murmur-dictate"]
 # Generic constants that ship inside CPython, numba, or CI debug strings. Counted for the report, not failing.
 ADVISORY = [b"/usr/local/", b"/tmp/", b"/private/tmp", b"/Users/runner"]
 # Matches of a FORBIDDEN pattern that are comments or docstrings, never opened (bundle-relative path -> patterns).
