@@ -41,27 +41,6 @@ function level(bytes: Uint8Array): number {
   return n ? Math.min(1, Math.sqrt(sum / n) * 4) : 0;
 }
 
-/** 이보다 조용하면 말이 없다고 본다. Android PcmRecorder.SILENCE_LEVEL과 같은 값. */
-export const SILENCE_LEVEL = 0.01;
-
-/** 0.1초 창 RMS의 최댓값(0~1, 증폭 없음). */
-export function speechLevel(pcm: ArrayBuffer): number {
-  const view = new DataView(pcm);
-  const n = Math.floor(pcm.byteLength / 2);
-  const win = SAMPLE_RATE / 10;
-  let best = 0;
-  for (let i = 0; i < n; i += win) {
-    const end = Math.min(n, i + win);
-    let sum = 0;
-    for (let j = i; j < end; j++) {
-      const s = view.getInt16(j * 2, true) / 32768;
-      sum += s * s;
-    }
-    best = Math.max(best, Math.sqrt(sum / (end - i)));
-  }
-  return best;
-}
-
 export type Recording = {pcm: ArrayBuffer; seconds: number};
 
 export class Recorder {

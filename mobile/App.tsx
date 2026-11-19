@@ -10,6 +10,7 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  TextInput,
   Share,
   StatusBar,
   StyleSheet,
@@ -27,10 +28,12 @@ import {
   loadSettings,
   samplePath,
   saveSettings,
+  type Settings,
   type ModelId,
 } from './src/models';
-import {Recorder, SILENCE_LEVEL, speechLevel} from './src/recorder';
+import {Recorder} from './src/recorder';
 import {load, transcribeFile, transcribePcm, type Result} from './src/transcriber';
+import {DOMAIN_HINT_PRESETS, buildPrompt} from './src/postprocess';
 
 type Phase = 'idle' | 'loading' | 'recording' | 'transcribing';
 
@@ -93,7 +96,8 @@ function App(): React.JSX.Element {
 function Main({dark}: {dark: boolean}) {
   const c = palette(dark);
   const recorder = useRef(new Recorder());
-  const [model, setModel] = useState<ModelId | null>(null);
+  const [settings, setSettings] = useState<Settings | null>(null);
+  const model = settings?.model ?? null;
   const [have, setHave] = useState<Record<string, boolean>>({});
   const [progress, setProgress] = useState<Record<string, number>>({});
   const [phase, setPhase] = useState<Phase>('idle');
@@ -136,14 +140,16 @@ function Main({dark}: {dark: boolean}) {
   }, []);
 
   useEffect(() => {
-    loadSettings().then(s => setModel(s.model));
+    loadSettings().then(setSettings);
     refresh();
   }, [refresh]);
 
-  const choose = async (id: ModelId) => {
-    setModel(id);
-    await saveSettings({model: id});
+  const update = async (patch: Partial<Settings>) => {
+    const next = {...(settings ?? (await loadSettings())), ...patch};
+    setSettings(next);
+    await saveSettings(next);
   };
+  const choose = (id: ModelId) => update({model: id});
 
   const fetchModel = async (id: ModelId) => {
     setError('');
@@ -201,17 +207,22 @@ function Main({dark}: {dark: boolean}) {
         setError('너무 짧아요. 버튼을 누른 채로 말해 주세요.');
         return;
       }
-      if (speechLevel(rec.pcm) < SILENCE_LEVEL) {
-        setError('소리가 거의 들리지 않았어요. 마이크를 확인하고 다시 말해 주세요.');
+      const r = await transcribePcm(rec.pcm, settings!);
+      if (req && shared) {
+        // 빈 결과도 돌려준다: 키보드가 "인식된 말이 없어요"를 띄운다(REQUESTS.md).
+        await shared.writeResult(req, r.text);
+        setDelivered(!!r.text);
+      }
+      if (r.dropped) {
+        setError(
+          r.dropped === 'silence'
+            ? '소리가 거의 들리지 않았어요. 마이크를 확인하고 다시 말해 주세요.'
+            : '잡음으로 보고 넣지 않았어요. 다시 말해 주세요.',
+        );
         return;
       }
-      const r = await transcribePcm(rec.pcm);
       setResult({...r, seconds: rec.seconds});
       setCopied(false);
-      if (req && shared && r.text) {
-        await shared.writeResult(req, r.text);
-        setDelivered(true);
-      }
     } catch (e: any) {
       setError(String(e?.message ?? e));
     } finally {
@@ -237,7 +248,7 @@ function Main({dark}: {dark: boolean}) {
     try {
       const loadMs = await ensureModel();
       setPhase('transcribing');
-      const r = await transcribeFile(samplePath);
+      const r = await transcribeFile(samplePath, settings!);
       setResult({...r, loadMs});
       console.log(`[murdic] sample model=${model} load=${loadMs}ms transcribe=${r.ms}ms text=${r.text}`);
     } catch (e: any) {
@@ -377,6 +388,8 @@ function Main({dark}: {dark: boolean}) {
           </>
         )}
 
+        {settings ? <HintSettings c={c} settings={settings} onSave={update} /> : null}
+
         {hasSample && ready ? (
           <Pressable testID="sample" onPress={runSample} style={[s.small, s.dev, {borderColor: c.line}]}>
             <Text style={{color: c.sub}}>개발용: sample.wav 전사 측정</Text>
@@ -384,6 +397,99 @@ function Main({dark}: {dark: boolean}) {
         ) : null}
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+/** 한 줄에 "틀린 말 = 바른 말" (→ 도 허용). 테스트용 export. */
+export function parseCorrections(text: string): [string, string][] {
+  return text
+    .split('\n')
+    .map(line => line.split(/\s*(?:=|→|->)\s*/))
+    .filter(parts => parts.length === 2 && parts[0].trim() !== '')
+    .map(([wrong, right]) => [wrong.trim(), right.trim()] as [string, string]);
+}
+
+/** 쉼표나 줄바꿈으로 나눈 고유명사. 테스트용 export. */
+export function parseNouns(text: string): string[] {
+  return text
+    .split(/[,\n]/)
+    .map(t => t.trim())
+    .filter(Boolean);
+}
+
+function HintSettings({
+  c,
+  settings,
+  onSave,
+}: {
+  c: ReturnType<typeof palette>;
+  settings: Settings;
+  onSave: (patch: Partial<Settings>) => Promise<void>;
+}) {
+  const [nouns, setNouns] = useState(settings.properNouns.join(', '));
+  const [terms, setTerms] = useState(settings.termCorrections.map(([w, r]) => `${w} = ${r}`).join('\n'));
+  const [saved, setSaved] = useState(false);
+  const prompt = buildPrompt(settings.hintPreset, parseNouns(nouns));
+  const save = async () => {
+    await onSave({properNouns: parseNouns(nouns), termCorrections: parseCorrections(terms)});
+    setSaved(true);
+  };
+  const input = [s.input, {color: c.text, borderColor: c.line, backgroundColor: c.card}];
+  return (
+    <>
+      <Text style={[s.h2, {color: c.text}]}>받아쓰기 힌트</Text>
+      <Text style={{color: c.sub, marginBottom: 8, lineHeight: 21}}>
+        자주 말하는 분야를 고르면 그 낱말을 더 잘 알아듣습니다. 앱과 키보드가 같이 씁니다.
+      </Text>
+      <View style={s.row}>
+        {DOMAIN_HINT_PRESETS.map(p => {
+          const on = settings.hintPreset === p.id;
+          return (
+            <Pressable
+              key={p.id}
+              testID={`preset-${p.id}`}
+              accessibilityState={{selected: on}}
+              onPress={() => onSave({hintPreset: p.id})}
+              style={[s.small, {borderColor: on ? c.accent : c.line, backgroundColor: on ? c.accent : 'transparent'}]}>
+              <Text style={{color: on ? '#fff' : c.text}}>{p.label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      <Text style={[s.label, {color: c.text}]}>고유명사 (쉼표로 구분)</Text>
+      <TextInput
+        testID="proper-nouns"
+        value={nouns}
+        onChangeText={t => {
+          setNouns(t);
+          setSaved(false);
+        }}
+        placeholder="머딕, 코난쌤, 판교"
+        placeholderTextColor={c.sub}
+        style={input}
+      />
+      <Text style={[s.label, {color: c.text}]}>용어 고치기 (한 줄에 틀린 말 = 바른 말)</Text>
+      <TextInput
+        testID="term-corrections"
+        value={terms}
+        onChangeText={t => {
+          setTerms(t);
+          setSaved(false);
+        }}
+        multiline
+        placeholder={'머디 = 머딕\n깃헙 = GitHub'}
+        placeholderTextColor={c.sub}
+        style={[input, s.multi]}
+      />
+      <Text style={[s.meta, {color: c.sub}]}>
+        기본 교정(클로드→Claude, 코덱스→Codex 등) 뒤에 적용됩니다.{'\n'}힌트: {prompt ?? '(없음)'}
+      </Text>
+      <View style={s.row}>
+        <Pressable testID="save-hints" onPress={save} style={[s.small, {borderColor: c.accent}]}>
+          <Text style={{color: c.accent}}>{saved ? '저장됨' : '저장'}</Text>
+        </Pressable>
+      </View>
+    </>
   );
 }
 
@@ -413,6 +519,9 @@ const s = StyleSheet.create({
   h2: {fontSize: 18, fontWeight: '700', marginTop: 28},
   modelRow: {flexDirection: 'row', alignItems: 'center', gap: 10},
   dev: {marginTop: 28, alignSelf: 'flex-start'},
+  label: {fontSize: 14, fontWeight: '600', marginTop: 16, marginBottom: 6},
+  input: {borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 16},
+  multi: {minHeight: 88, textAlignVertical: 'top'},
 });
 
 export default App;
