@@ -12,6 +12,9 @@ import time
 from typing import NamedTuple, Optional, Tuple
 
 import numpy as np
+# Import once at module load, before any thread calls CoInitializeEx: SoundCard
+# initialises COM on import and fails if that thread already did (S_FALSE).
+import soundcard as sc
 
 from .engine import SAMPLE_RATE, level_db
 
@@ -60,7 +63,6 @@ def explain(error):
 
 
 def list_microphones():
-    import soundcard as sc
     ensure_com()
     loop = loopback_enabled()
     found = sc.all_microphones(include_loopback=loop)
@@ -153,7 +155,6 @@ class Capture:
         return self
 
     def _open(self):
-        import soundcard as sc
         for mic in sc.all_microphones(include_loopback=loopback_enabled()):
             if mic.id == self.microphone.id:
                 return mic
