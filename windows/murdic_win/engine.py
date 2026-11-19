@@ -20,6 +20,12 @@ import numpy as np
 from dictate.cleanup import clean
 
 from . import paths
+from .postprocess import build_prompt, filter_transcript, parse_terms, speech_windows
+
+# Murmur's decoding settings (core/src/murmur/stt.py, docs/STT_TUNING.md §1).
+# mlx_whisper decodes greedily at temperature 0, so beam_size is 1 here too.
+DECODE = dict(beam_size=1, best_of=1, temperature=0.0, condition_on_previous_text=False,
+              no_speech_threshold=0.6, compression_ratio_threshold=1.8, log_prob_threshold=-1.0)
 
 SAMPLE_RATE = 16000
 HOP = 160                 # mel frames are 10 ms apart
@@ -144,7 +150,7 @@ class Engine:
         if device in ("auto", "cpu", "cuda"):
             candidates.append(("cpu", "int8"))
         errors = []
-        self.beam_size = 5
+        self.beam_size = DECODE["beam_size"]
         self.threads = cpu_threads or physical_cores()
         for dev, compute in candidates:
             try:
@@ -167,21 +173,17 @@ class Engine:
     def label(self):
         return "GPU (CUDA)" if self.device == "cuda" else f"CPU ({self.threads}스레드)"
 
-    def speech_span(self, audio):
-        from faster_whisper.vad import VadOptions, get_speech_timestamps
-        spans = get_speech_timestamps(audio, VadOptions())
-        if not spans:
-            return None
-        return spans[0]["start"], spans[-1]["end"]
+    def transcribe(self, audio, hints=None, windows=None):
+        """Return (raw text, decoding path) for one utterance.
 
-    def transcribe(self, audio, hints=None):
-        """Return (raw text, decoding path) for one utterance."""
-        span = self.speech_span(audio)
-        if span is None:
+        Like dictate/backend.py, nothing is transcribed unless Murmur's VAD finds
+        speech in at least one 0.3 s window."""
+        if windows is None:
+            windows = speech_windows(audio)
+        if not windows:
             return "", "silent"
-        clip = audio[span[0]:span[1]]
-        if len(clip) / SAMPLE_RATE <= MAX_SHORT_SECONDS:
-            text, trusted = self._decode(clip, hints)
+        if len(audio) / SAMPLE_RATE <= MAX_SHORT_SECONDS:
+            text, trusted = self._decode(audio, hints)
             if trusted:
                 return text, "short" if self.device == "cpu" else "direct"
         return self._long(audio, hints), "full"
@@ -206,18 +208,23 @@ class Engine:
         tokens = [t for t in result.sequences_ids[0] if t < self.tokenizer.eot]
         text = self.tokenizer.decode(tokens).strip()
         avg_logprob = result.scores[0] * len(tokens) / (len(tokens) + 1)
-        if result.no_speech_prob > 0.6 and avg_logprob < -1:
+        # Whisper's silence rule with Murmur's thresholds.
+        if (result.no_speech_prob > DECODE["no_speech_threshold"]
+                and avg_logprob < DECODE["log_prob_threshold"]):
             return "", True
-        trusted = bool(text) and avg_logprob >= -1 and get_compression_ratio(text) <= 2.4
+        # Anything Murmur's thresholds would flag is decoded again exactly as Murmur
+        # does (30 s window), so only clean short-window results differ in path.
+        trusted = (bool(text) and avg_logprob >= DECODE["log_prob_threshold"]
+                   and get_compression_ratio(text) <= DECODE["compression_ratio_threshold"])
         if not trusted:
-            log.info("Short decode not trusted (logprob %.2f): falling back", avg_logprob)
+            log.info("Short decode flagged (logprob %.2f): using the 30 s window", avg_logprob)
         return text, trusted
 
     def _long(self, audio, hints):
-        segments, _ = self.model.transcribe(
-            audio, language="ko", beam_size=5, vad_filter=True, initial_prompt=hints or None,
-            condition_on_previous_text=False, without_timestamps=True)
-        return " ".join(segment.text.strip() for segment in segments).strip()
+        """faster-whisper's standard transcription with Murmur's decoding settings."""
+        segments, _ = self.model.transcribe(audio, language="ko", initial_prompt=hints or None,
+                                            vad_filter=False, **DECODE)
+        return "".join(segment.text for segment in segments).strip()
 
 
 def find_hook(directory):
@@ -245,26 +252,33 @@ def optional_hook(text, directory):
 
 
 class Pipeline:
-    """WAV or samples -> Whisper -> dictate.cleanup.clean -> optional hook."""
+    """Samples -> Murmur VAD gate -> Whisper (Murmur settings + hint preset + hints.txt)
+    -> hallucination filter -> term corrections -> dictate.cleanup.clean -> optional hook."""
 
-    def __init__(self, directory=None, engine=None, device="auto"):
+    def __init__(self, directory=None, engine=None, device="auto", preset=None):
         self.directory = Path(directory) if directory else paths.config_dir()
+        if preset is None:
+            from .settings import Settings
+            preset = Settings(self.directory).get("hint_preset", "none")
+        self.preset = preset
         self.engine = engine or Engine(device=device)
 
+    def _lines(self, name):
+        file = self.directory / name
+        return file.read_text(encoding="utf-8-sig") if file.exists() else ""
+
     def hints(self):
-        file = self.directory / "hints.txt"
-        if not file.exists():
-            return None
-        lines = [line.strip() for line in file.read_text(encoding="utf-8-sig").splitlines()]
-        return ", ".join(line for line in lines if line) or None
+        return build_prompt(self.preset, [line.strip() for line in self._lines("hints.txt").splitlines()])
 
     def run_audio(self, audio):
         started = time.perf_counter()
-        raw, route = self.engine.transcribe(audio, self.hints())
-        text = optional_hook(clean(raw), self.directory)
+        windows = speech_windows(audio)
+        raw, route = self.engine.transcribe(audio, self.hints(), windows)
+        text = filter_transcript(raw, windows, parse_terms(self._lines("terms.txt")))
+        text = optional_hook(clean(text), self.directory) if text else ""
         return dict(text=text, raw=raw, audio_s=round(len(audio) / SAMPLE_RATE, 3),
                     processing_ms=round((time.perf_counter() - started) * 1000, 1),
-                    device=self.engine.device, route=route)
+                    device=self.engine.device, route=route, speech_windows=windows)
 
     def run(self, path):
         return self.run_audio(read_wav(path))

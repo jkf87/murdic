@@ -17,6 +17,7 @@ from . import paste, paths
 from .audio import Capture, DeviceWatcher, MicrophoneSelection
 from .engine import QUIET_DB, Engine, Pipeline
 from .hotkey import DEFAULT_HOTKEY, HOTKEYS, KeyboardHook
+from .postprocess import HINT_PRESETS
 from .settings import Settings
 
 log = logging.getLogger("murdic.app")
@@ -41,7 +42,13 @@ class App:
         hints = directory / "hints.txt"
         if not hints.exists():
             hints.write_text("", encoding="utf-8")
+        terms = directory / "terms.txt"
+        if not terms.exists():
+            terms.write_text("# 용어 교정: 한 줄에 `잘못 들린 말 => 바른 표기` (Murmur 기본 교정 뒤에 적용)\n"
+                             "# 예) 머딕 => murdic\n", encoding="utf-8")
         self.settings = Settings(directory)
+        preset = self.settings.get("hint_preset", "none")
+        self.preset = preset if preset in HINT_PRESETS else "none"
         self.device = device
         self.queue = queue.Queue()
         self.root = tk.Tk()
@@ -124,7 +131,7 @@ class App:
 
         def load():
             try:
-                pipeline = Pipeline(self.directory, Engine(device=self.device))
+                pipeline = Pipeline(self.directory, Engine(device=self.device), preset=self.preset)
                 self.post(self.engine_loaded, pipeline)
             except Exception as error:
                 log.exception("Engine failed")
@@ -346,6 +353,15 @@ class App:
         self.hook.set_hotkey(HOTKEYS[name])
         if self.state == "ready":
             self.ready()
+
+    def select_preset(self, name):
+        if name not in HINT_PRESETS:
+            return
+        self.preset = name
+        self.settings.update(hint_preset=name)
+        if self.pipeline:
+            self.pipeline.preset = name
+        self.tray.refresh(self.state == "failed")
 
     def open_config(self):
         os.startfile(self.directory)

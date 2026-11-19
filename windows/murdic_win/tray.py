@@ -6,6 +6,7 @@ from PIL import Image, ImageDraw
 
 from . import paths
 from .hotkey import HOTKEYS
+from .postprocess import HINT_PRESETS
 
 log = logging.getLogger("murdic.tray")
 
@@ -53,6 +54,9 @@ class Tray:
         keys = [Item(key.title, self._post(app.select_hotkey, name),
                      checked=lambda _, n=name: app.hotkey_name == n, radio=True)
                 for name, key in HOTKEYS.items()]
+        presets = [Item(title if not hints else f"{title} — {hints}", self._post(app.select_preset, name),
+                        checked=lambda _, n=name: app.preset == n, radio=True)
+                   for name, (title, hints) in HINT_PRESETS.items()]
         active = selection.active
         items = [
             Item(app.status, None, enabled=False),
@@ -61,8 +65,9 @@ class Tray:
             Item("마이크: " + (active.name.replace("&", "&&") if active else "없음"), Menu(*mics)),
             Item("3초 마이크 테스트", self._post(app.test_microphone), enabled=app.can_test),
             Item("단축키", Menu(*keys)),
+            Item("도메인 힌트: " + HINT_PRESETS[app.preset][0], Menu(*presets)),
             Menu.SEPARATOR,
-            Item("힌트·설정 폴더 열기", self._post(app.open_config)),
+            Item("힌트·용어·설정 폴더 열기", self._post(app.open_config)),
         ]
         if paths.FROZEN:
             items.append(Item("Windows 시작 시 실행", self._post(app.toggle_autostart),

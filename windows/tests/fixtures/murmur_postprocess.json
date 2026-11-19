@@ -1,0 +1,253 @@
+{
+ "source": "jkf87/murmur core/src/murmur/postprocess.py (master)",
+ "term_corrections": {
+  "클드": "Claude",
+  "클로드": "Claude",
+  "클라우드 코드": "Claude Code",
+  "클드 코드": "Claude Code",
+  "쉬프트": "시프트",
+  "코덱스": "Codex"
+ },
+ "cases": [
+  {
+   "text": "",
+   "is_hallucination": true,
+   "corrected": ""
+  },
+  {
+   "text": " ",
+   "is_hallucination": true,
+   "corrected": " "
+  },
+  {
+   "text": "a",
+   "is_hallucination": true,
+   "corrected": "a"
+  },
+  {
+   "text": "가",
+   "is_hallucination": true,
+   "corrected": "가"
+  },
+  {
+   "text": "네",
+   "is_hallucination": true,
+   "corrected": "네"
+  },
+  {
+   "text": "네.",
+   "is_hallucination": false,
+   "corrected": "네."
+  },
+  {
+   "text": "감사합니다",
+   "is_hallucination": true,
+   "corrected": "감사합니다"
+  },
+  {
+   "text": "감사합니다.",
+   "is_hallucination": true,
+   "corrected": "감사합니다."
+  },
+  {
+   "text": "감사합니다..",
+   "is_hallucination": true,
+   "corrected": "감사합니다.."
+  },
+  {
+   "text": "감사합니다!",
+   "is_hallucination": false,
+   "corrected": "감사합니다!"
+  },
+  {
+   "text": "시청해 주셔서 감사합니다.",
+   "is_hallucination": true,
+   "corrected": "시청해 주셔서 감사합니다."
+  },
+  {
+   "text": "시청해주셔서 감사합니다",
+   "is_hallucination": true,
+   "corrected": "시청해주셔서 감사합니다"
+  },
+  {
+   "text": "구독과 좋아요",
+   "is_hallucination": true,
+   "corrected": "구독과 좋아요"
+  },
+  {
+   "text": "좋아요와 구독.",
+   "is_hallucination": true,
+   "corrected": "좋아요와 구독."
+  },
+  {
+   "text": "도움이 되었습니다",
+   "is_hallucination": true,
+   "corrected": "도움이 되었습니다"
+  },
+  {
+   "text": "날씨였습니다.",
+   "is_hallucination": true,
+   "corrected": "날씨였습니다."
+  },
+  {
+   "text": "오늘 회의 정말 감사합니다.",
+   "is_hallucination": false,
+   "corrected": "오늘 회의 정말 감사합니다."
+  },
+  {
+   "text": "네 네 네 네",
+   "is_hallucination": true,
+   "corrected": "네 네 네 네"
+  },
+  {
+   "text": "네 네 네",
+   "is_hallucination": true,
+   "corrected": "네 네 네"
+  },
+  {
+   "text": "좋아요 좋아요 좋아요 좋아요",
+   "is_hallucination": true,
+   "corrected": "좋아요 좋아요 좋아요 좋아요"
+  },
+  {
+   "text": "아니 네 아니 네",
+   "is_hallucination": true,
+   "corrected": "아니 네 아니 네"
+  },
+  {
+   "text": "Yes, yes, yes.",
+   "is_hallucination": true,
+   "corrected": "Yes, yes, yes."
+  },
+  {
+   "text": "가나다라마가나다라마가나다라마",
+   "is_hallucination": false,
+   "corrected": "가나다라마가나다라마가나다라마"
+  },
+  {
+   "text": "회의실 회의실 회의실 회의실",
+   "is_hallucination": true,
+   "corrected": "회의실 회의실 회의실 회의실"
+  },
+  {
+   "text": "abcdeabcdeabcde",
+   "is_hallucination": false,
+   "corrected": "abcdeabcdeabcde"
+  },
+  {
+   "text": "오늘 오후 3시에 회의실에서 만나요. 준비한 자료도 가져오세요.",
+   "is_hallucination": false,
+   "corrected": "오늘 오후 3시에 회의실에서 만나요. 준비한 자료도 가져오세요."
+  },
+  {
+   "text": "음... 음... 음... 음... 음...",
+   "is_hallucination": true,
+   "corrected": "음... 음... 음... 음... 음..."
+  },
+  {
+   "text": "그러니까... 음... 네...",
+   "is_hallucination": false,
+   "corrected": "그러니까... 음... 네..."
+  },
+  {
+   "text": "ㅁ",
+   "is_hallucination": true,
+   "corrected": "ㅁ"
+  },
+  {
+   "text": "ㅋㅋㅋㅋㅋ",
+   "is_hallucination": true,
+   "corrected": "ㅋㅋㅋㅋㅋ"
+  },
+  {
+   "text": "ㅋㅋ 진짜요",
+   "is_hallucination": true,
+   "corrected": "ㅋㅋ 진짜요"
+  },
+  {
+   "text": "Привет как дела",
+   "is_hallucination": true,
+   "corrected": "Привет как дела"
+  },
+  {
+   "text": "مرحبا كيف حالك",
+   "is_hallucination": true,
+   "corrected": "مرحبا كيف حالك"
+  },
+  {
+   "text": "♪♪♪ 음악 ♪♪♪",
+   "is_hallucination": true,
+   "corrected": "♪♪♪ 음악 ♪♪♪"
+  },
+  {
+   "text": "100% 확실해요!",
+   "is_hallucination": false,
+   "corrected": "100% 확실해요!"
+  },
+  {
+   "text": "(웃음) 그렇죠~",
+   "is_hallucination": false,
+   "corrected": "(웃음) 그렇죠~"
+  },
+  {
+   "text": "東京に行きます。",
+   "is_hallucination": false,
+   "corrected": "東京に行きます。"
+  },
+  {
+   "text": "我们明天见。",
+   "is_hallucination": false,
+   "corrected": "我们明天见。"
+  },
+  {
+   "text": "「인용」입니다",
+   "is_hallucination": false,
+   "corrected": "「인용」입니다"
+  },
+  {
+   "text": "코덱스랑 클로드로 작업해요",
+   "is_hallucination": false,
+   "corrected": "Codex랑 Claude로 작업해요"
+  },
+  {
+   "text": "클로드 코드로 만들어요",
+   "is_hallucination": false,
+   "corrected": "Claude 코드로 만들어요"
+  },
+  {
+   "text": "클라우드 코드 설치",
+   "is_hallucination": false,
+   "corrected": "Claude Code 설치"
+  },
+  {
+   "text": "클드 코드 켜 줘",
+   "is_hallucination": false,
+   "corrected": "Claude 코드 켜 줘"
+  },
+  {
+   "text": "쉬프트 키를 누르세요",
+   "is_hallucination": false,
+   "corrected": "시프트 키를 누르세요"
+  },
+  {
+   "text": "클드에게 물어봐요",
+   "is_hallucination": false,
+   "corrected": "Claude에게 물어봐요"
+  },
+  {
+   "text": "Claude Code는 이미 영어예요",
+   "is_hallucination": false,
+   "corrected": "Claude Code는 이미 영어예요"
+  },
+  {
+   "text": "내일 세 시, 아니 네 시에 만나요.",
+   "is_hallucination": false,
+   "corrected": "내일 세 시, 아니 네 시에 만나요."
+  },
+  {
+   "text": "API API 응답을 볼까요?",
+   "is_hallucination": false,
+   "corrected": "API API 응답을 볼까요?"
+  }
+ ]
+}
